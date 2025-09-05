@@ -72,10 +72,12 @@ export default function MemoAtivoDashboard() {
   const startStudyMode = () => {
     if (selectedTopic) {
       const cardsToStudy = selectedTopic.flashcards.filter((card) => card.status !== "mastered");
-      setStudyCards(cardsToStudy);
-      setCurrentCardIndex(0);
-      setShowAnswer(false);
-      setStudyMode(true);
+      if (cardsToStudy.length > 0) {
+        setStudyCards(cardsToStudy);
+        setCurrentCardIndex(0);
+        setShowAnswer(false);
+        setStudyMode(true);
+      }
     }
   };
   const exitStudyMode = () => { setStudyMode(false); setStudyCards([]); };
@@ -225,16 +227,18 @@ export default function MemoAtivoDashboard() {
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
-            <div className="rounded-lg border border-border bg-card p-6 shadow-3d">
-                <h3 className="flex items-center gap-2 text-xl font-bold font-heading">
-                    <Sparkles className="h-6 w-6 text-accent" />
-                    Gerar Flashcards com IA
-                </h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                    Escolha a área de estudo, defina o tópico e descreva o que quer estudar para a IA criar os flashcards.
-                </p>
+            <div className="rounded-lg border border-border bg-card p-6 shadow-3d space-y-6">
+                <div className="space-y-2">
+                    <h3 className="flex items-center gap-2 text-xl font-bold font-heading">
+                        <Sparkles className="h-6 w-6 text-accent" />
+                        Gerar Flashcards com IA
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                        Escolha a área de estudo, defina o tópico e descreva o que quer estudar para a IA criar os flashcards.
+                    </p>
+                </div>
                 
-                <form className="mt-6 space-y-6" onSubmit={(e) => e.preventDefault()}>
+                <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
                     <div className="space-y-2">
                         <label htmlFor="study-area" className="text-sm font-medium text-foreground">Área de Estudo *</label>
                         <select id="study-area" className="flex h-10 w-full items-center justify-between rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary">
@@ -273,12 +277,90 @@ export default function MemoAtivoDashboard() {
                         Gerar Flashcards
                     </button>
                 </form>
+
+                <div className="rounded-xl border border-accent/20 bg-gradient-to-r from-accent/10 to-secondary/10 p-4">
+                    <div className="mb-2 flex items-center gap-2">
+                        <Brain className="h-5 w-5 text-primary" />
+                        <span className="font-semibold text-primary">IA Inteligente</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                        A nossa IA analisa o seu texto e cria automaticamente flashcards otimizados!
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 border-t border-border pt-6 md:grid-cols-2">
+                    <button className="flex h-16 flex-col items-center justify-center gap-2 rounded-lg border border-border bg-transparent shadow-3d transition-all duration-300 hover:shadow-3d-hover">
+                        <Plus className="h-6 w-6 text-muted-foreground" />
+                        <span className="font-semibold text-foreground">Criar Manualmente</span>
+                    </button>
+                    <button className="flex h-16 flex-col items-center justify-center gap-2 rounded-lg border border-border bg-transparent shadow-3d transition-all duration-300 hover:shadow-3d-hover">
+                        <Upload className="h-6 w-6 text-muted-foreground" />
+                        <span className="font-semibold text-foreground">Importar Arquivo</span>
+                    </button>
+                </div>
+
             </div>
             <div className="rounded-lg border border-border bg-card p-6 shadow-3d"><h3 className="text-sm font-medium text-muted-foreground">Áreas de Estudo</h3><div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">{studyAreas.map((area) => (<div key={area.id} onClick={() => handleStudyAreaClick(area)} className={`cursor-pointer rounded-xl border p-4 transition-all duration-300 hover:shadow-3d-hover ${area.bgGradient} ${area.borderColor}`}><div className="mb-3 flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-xl shadow-3d"><span className="text-2xl">{area.emoji}</span></div><div><h4 className={`font-bold ${area.textColor} font-heading`}>{area.name}</h4><p className="text-sm text-muted-foreground">{area.totalSets} conjuntos • {area.totalCards} cards</p></div><ChevronRight className="ml-auto h-5 w-5 text-muted-foreground" /></div></div>))}</div></div>
           </div>
           <div className="space-y-6">
-            <div className="rounded-lg border border-border bg-card p-6 shadow-3d"><h3 className="flex items-center gap-2 font-bold font-heading"><BarChart3 className="h-5 w-5 text-accent" />Recomendações</h3></div>
-            <div className="rounded-lg border border-border bg-card p-6 shadow-3d"><h3 className="flex items-center gap-2 font-bold font-heading"><Settings className="h-5 w-5 text-purple-600" />Configurações Rápidas</h3></div>
+            <div className="rounded-lg border border-border bg-card p-6 shadow-3d">
+                <h3 className="flex items-center gap-2 font-bold font-heading mb-4">
+                    <BarChart3 className="h-5 w-5 text-accent" />
+                    Recomendações
+                </h3>
+                <div className="space-y-3">
+                    <div className="rounded-lg border border-accent/20 bg-accent/10 p-3">
+                        <div className="mb-1 flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-accent" />
+                            <span className="text-sm font-medium">Melhor horário</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">Você aprende melhor às 14h-16h</p>
+                    </div>
+                    <div className="rounded-lg border border-primary/20 bg-primary/10 p-3">
+                        <div className="mb-1 flex items-center gap-2">
+                            <Target className="h-4 w-4 text-primary" />
+                            <span className="text-sm font-medium">Foco sugerido</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">Revisar Química - Orgânica hoje</p>
+                    </div>
+                    <div className="rounded-lg border border-secondary/20 bg-secondary/10 p-3">
+                        <div className="mb-1 flex items-center gap-2">
+                            <Zap className="h-4 w-4 text-secondary" />
+                            <span className="text-sm font-medium">Meta diária</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">Faltam 5 cards para completar</p>
+                    </div>
+                </div>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-6 shadow-3d">
+                <h3 className="flex items-center gap-2 font-bold font-heading mb-4">
+                    <Settings className="h-5 w-5 text-purple-600" />
+                    Configurações Rápidas
+                </h3>
+                <div className="space-y-1">
+                    <button className="flex w-full items-center gap-3 rounded-lg p-3 text-left hover:bg-muted">
+                        <Bell className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                            <div className="font-medium">Notificações</div>
+                            <div className="text-xs text-muted-foreground">Lembretes de estudo</div>
+                        </div>
+                    </button>
+                    <button className="flex w-full items-center gap-3 rounded-lg p-3 text-left hover:bg-muted">
+                        <Calendar className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                            <div className="font-medium">Cronograma</div>
+                            <div className="text-xs text-muted-foreground">Planejar sessões</div>
+                        </div>
+                    </button>
+                    <button className="flex w-full items-center gap-3 rounded-lg p-3 text-left hover:bg-muted">
+                        <BarChart3 className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                            <div className="font-medium">Relatórios</div>
+                            <div className="text-xs text-muted-foreground">Ver progresso detalhado</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
           </div>
         </div>
       </main>
