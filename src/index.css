@@ -1,13 +1,41 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* --- FONTES DO GOOGLE --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap');
+
+/* --- VARIÁVEIS DE COR E TEMA --- */
+:root {
+  --background: oklch(0.98 0.005 240); /* Fundo branco levemente azulado */
+  --foreground: oklch(0.2 0 0);
+  --card: oklch(1 0 0); /* Cards brancos */
+  --primary: oklch(0.55 0.18 240); /* Azul MemoAtivo */
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.75 0.15 180); /* Verde Água MemoAtivo */
+  --secondary-foreground: oklch(1 0 0);
+  --muted: oklch(0.96 0.01 240);
+  --muted-foreground: oklch(0.5 0 0);
+  --accent: oklch(0.85 0.12 85); /* Amarelo MemoAtivo */
+  --accent-foreground: oklch(0.2 0 0);
+  --border: oklch(0.9 0.01 240);
+  --radius: 1rem;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+/* --- LINHAS ESSENCIAIS DO TAILWIND --- */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --- CLASSES PERSONALIZADAS --- */
+@layer base {
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  .gradient-bg-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  }
+  .shadow-3d {
+    box-shadow: 0 4px 16px rgba(0, 123, 255, 0.1);
+  }
+  .shadow-3d-hover {
+    box-shadow: 0 8px 32px rgba(0, 123, 255, 0.2);
+  }
 }
+
