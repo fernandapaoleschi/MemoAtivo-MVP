@@ -24,31 +24,21 @@ const studyAreas = [
       name: "Matemática",
       emoji: "📐",
       color: "primary",
-      bgGradient: "from-blue-50 to-blue-100",
+      bgGradient: "bg-gradient-to-br from-blue-50 to-blue-100",
       borderColor: "border-blue-200",
       textColor: "text-primary",
-      buttonColor: "bg-primary hover:bg-primary/90",
+      buttonColor: "bg-primary text-primary-foreground",
       totalSets: 3,
       totalCards: 45,
       topics: [
-        {
-          id: "funcoes",
-          name: "Funções",
-          cardCount: 15,
-          status: "active",
-          flashcards: [
-            { id: "f1", question: "O que é uma função quadrática?", answer: "Uma função quadrática é uma função polinomial de segundo grau, da forma f(x) = ax² + bx + c, onde a ≠ 0.", difficulty: "medium", status: "learning" },
-            { id: "f2", question: "Como encontrar o vértice de uma parábola?", answer: "O vértice de uma parábola f(x) = ax² + bx + c está no ponto (-b/2a, f(-b/2a)).", difficulty: "hard", status: "new" },
-            { id: "f3", question: "Qual é o domínio de uma função quadrática?", answer: "O domínio de uma função quadrática é sempre o conjunto dos números reais (ℝ).", difficulty: "easy", status: "mastered" },
-          ],
-        },
+        { id: "funcoes", name: "Funções", cardCount: 15, status: "active", flashcards: [{ id: "f1", question: "O que é uma função quadrática?", answer: "Uma função quadrática é uma função polinomial de segundo grau, da forma f(x) = ax² + bx + c, onde a ≠ 0.", difficulty: "medium", status: "learning" }] },
         { id: "geometria", name: "Geometria", cardCount: 18, status: "active", flashcards: [{ id: 'g1', question: 'Qual é a fórmula da área de um círculo?', answer: 'A = πr²', difficulty: 'easy', status: 'mastered' }] },
         { id: "algebra", name: "Álgebra", cardCount: 12, status: "completed", flashcards: [] },
       ],
     },
-    { id: "historia", name: "História", emoji: "🏛️", color: "secondary", bgGradient: "from-cyan-50 to-cyan-100", borderColor: "border-cyan-200", textColor: "text-cyan-800", buttonColor: "border-cyan-700 text-cyan-800 hover:bg-cyan-700 hover:text-white", totalSets: 2, totalCards: 28, topics: [ { id: "brasil-colonial", name: "Brasil Colonial", cardCount: 16, status: "active", flashcards: [] }, { id: "republica", name: "República", cardCount: 12, status: "completed", flashcards: [] }]},
-    { id: "biologia", name: "Biologia", emoji: "🧬", color: "green", bgGradient: "from-green-50 to-green-100", borderColor: "border-green-200", textColor: "text-green-700", buttonColor: "border-green-600 text-green-700 hover:bg-green-600 hover:text-white", totalSets: 4, totalCards: 62, topics: [{ id: "genetica", name: "Genética", cardCount: 20, status: "active", flashcards: [] }]},
-    { id: "quimica", name: "Química", emoji: "⚗️", color: "accent", bgGradient: "from-yellow-50 to-yellow-100", borderColor: "border-yellow-200", textColor: "text-accent-foreground", buttonColor: "bg-accent hover:bg-accent/90", totalSets: 3, totalCards: 38, topics: [{ id: "organica", name: "Orgânica", cardCount: 15, status: "review", lastReviewed: "hoje", flashcards: [] }]},
+    { id: "historia", name: "História", emoji: "🏛️", color: "secondary", bgGradient: "bg-gradient-to-br from-cyan-50 to-cyan-100", borderColor: "border-cyan-200", textColor: "text-cyan-800", buttonColor: "border-cyan-700 text-cyan-800", totalSets: 2, totalCards: 28, topics: [ { id: "brasil-colonial", name: "Brasil Colonial", cardCount: 16, status: "active", flashcards: [] }, { id: "republica", name: "República", cardCount: 12, status: "completed", flashcards: [] }]},
+    { id: "biologia", name: "Biologia", emoji: "🧬", color: "green", bgGradient: "bg-gradient-to-br from-green-50 to-green-100", borderColor: "border-green-200", textColor: "text-green-700", buttonColor: "border-green-600 text-green-700", totalSets: 4, totalCards: 62, topics: [{ id: "genetica", name: "Genética", cardCount: 20, status: "active", flashcards: [] }, { id: "citologia", name: "Citologia", cardCount: 18, status: "active", flashcards: [] }, { id: "ecologia", name: "Ecologia", cardCount: 14, status: "completed", flashcards: [] }]},
+    { id: "quimica", name: "Química", emoji: "⚗️", color: "accent", bgGradient: "bg-gradient-to-br from-yellow-50 to-yellow-100", borderColor: "border-yellow-200", textColor: "text-amber-800", buttonColor: "border-amber-700 text-amber-800", totalSets: 3, totalCards: 38, topics: [{ id: "organica", name: "Orgânica", cardCount: 15, status: "review", lastReviewed: "hoje", flashcards: [] }, { id: "inorganica", name: "Inorgânica", cardCount: 15, status: "active", flashcards: [] }, { id: "fisico-quimica", name: "Físico-Química", cardCount: 8, status: "completed", flashcards: [] }]},
 ];
 
 // --- COMPONENTE PRINCIPAL ---
@@ -110,8 +100,8 @@ export default function MemoAtivoDashboard() {
   );
 
   const TopicBadge = ({ topic }) => (
-    <span className={`px-2 py-1 text-xs font-semibold rounded-md ${topic.status === "review" ? "bg-red-100 text-red-700" : "bg-muted text-muted-foreground"}`}>
-      {topic.status === "review" ? `Revisar ${topic.lastReviewed}!` : `${topic.cardCount} cards`}
+    <span className={`px-2 py-1 text-xs font-semibold rounded-lg ${topic.status === "review" ? "bg-red-100 text-red-700" : topic.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
+      {topic.status === "review" ? `Revisar hoje!` : `${topic.cardCount} cards`}
     </span>
   );
 
@@ -228,79 +218,110 @@ export default function MemoAtivoDashboard() {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
             <div className="rounded-lg border border-border bg-card p-6 shadow-3d space-y-6">
-                <div className="space-y-2">
-                    <h3 className="flex items-center gap-2 text-xl font-bold font-heading">
-                        <Sparkles className="h-6 w-6 text-accent" />
-                        Gerar Flashcards com IA
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                        Escolha a área de estudo, defina o tópico e descreva o que quer estudar para a IA criar os flashcards.
-                    </p>
-                </div>
-                
-                <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-                    <div className="space-y-2">
-                        <label htmlFor="study-area" className="text-sm font-medium text-foreground">Área de Estudo *</label>
-                        <select id="study-area" className="flex h-10 w-full items-center justify-between rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-                            <option>Selecione a área de estudo</option>
-                            {studyAreas.map(area => <option key={area.id} value={area.id}>{area.name}</option>)}
-                        </select>
-                        <p className="text-xs text-muted-foreground">Escolha em qual matéria os flashcards serão organizados.</p>
-                    </div>
+    {/* Título e Descrição (já existentes) */}
+    <div className="space-y-2">
+        <h3 className="flex items-center gap-2 text-xl font-bold font-heading">
+            <Sparkles className="h-6 w-6 text-accent" />
+            Gerar Flashcards com IA
+        </h3>
+        <p className="text-sm text-muted-foreground">
+            Escolha a área de estudo, defina o tópico e descreva o que quer estudar para a IA criar os flashcards.
+        </p>
+    </div>
+    
+    {/* FORMULÁRIO (CÓDIGO NOVO) */}
+    <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+        <div className="space-y-2">
+            <label htmlFor="study-area" className="text-sm font-medium text-foreground">Área de Estudo *</label>
+            <select id="study-area" className="flex h-10 w-full items-center justify-between rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+                <option>Selecione a área de estudo</option>
+                {studyAreas.map(area => <option key={area.id} value={area.id}>{area.name}</option>)}
+            </select>
+            <p className="text-xs text-muted-foreground">Escolha em qual matéria os flashcards serão organizados.</p>
+        </div>
 
-                    <div className="space-y-2">
-                        <label htmlFor="specific-topic" className="text-sm font-medium text-foreground">Tópico Específico *</label>
-                        <input type="text" id="specific-topic" placeholder="Ex: Funções Quadráticas, Independência do Brasil..." className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-                        <p className="text-xs text-muted-foreground">Nome do tópico específico dentro da área de estudo selecionada.</p>
-                    </div>
+        <div className="space-y-2">
+            <label htmlFor="specific-topic" className="text-sm font-medium text-foreground">Tópico Específico *</label>
+            <input type="text" id="specific-topic" placeholder="Ex: Funções Quadráticas, Independência do Brasil..." className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+            <p className="text-xs text-muted-foreground">Nome do tópico específico dentro da área de estudo selecionada.</p>
+        </div>
 
-                    <div className="space-y-2">
-                        <label htmlFor="ia-description" className="text-sm font-medium text-foreground">Descrição para a IA *</label>
-                        <textarea id="ia-description" rows="4" placeholder="Ex: Detalhar os principais eventos que levaram à Independência do Brasil..." className="flex min-h-[80px] w-full rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
-                        <p className="text-xs text-muted-foreground">Quanto mais detalhes, melhores serão os flashcards.</p>
-                    </div>
+        <div className="space-y-2">
+            <label htmlFor="ia-description" className="text-sm font-medium text-foreground">Descrição para a IA *</label>
+            <textarea id="ia-description" rows="4" placeholder="Ex: Detalhar os principais eventos que levaram à Independência do Brasil..." className="flex min-h-[80px] w-full rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+            <p className="text-xs text-muted-foreground">Quanto mais detalhes, melhores serão os flashcards.</p>
+        </div>
 
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <label className="text-sm font-medium">Número de Flashcards:</label>
-                            <span className="rounded-md bg-secondary px-2.5 py-0.5 text-sm font-semibold text-secondary-foreground">{sliderValue} cards</span>
-                        </div>
-                        <input type="range" min="5" max="20" value={sliderValue} onChange={(e) => setSliderValue(e.target.value)} className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary" />
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                            <span>5</span>
-                            <span>20</span>
-                        </div>
-                    </div>
-
-                    <button type="submit" className="flex w-full h-12 items-center justify-center gap-2 rounded-lg bg-primary text-lg font-semibold text-primary-foreground shadow-3d transition-all duration-300 hover:shadow-3d-hover">
-                        <Brain className="h-5 w-5" />
-                        Gerar Flashcards
-                    </button>
-                </form>
-
-                <div className="rounded-xl border border-accent/20 bg-gradient-to-r from-accent/10 to-secondary/10 p-4">
-                    <div className="mb-2 flex items-center gap-2">
-                        <Brain className="h-5 w-5 text-primary" />
-                        <span className="font-semibold text-primary">IA Inteligente</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                        A nossa IA analisa o seu texto e cria automaticamente flashcards otimizados!
-                    </p>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 border-t border-border pt-6 md:grid-cols-2">
-                    <button className="flex h-16 flex-col items-center justify-center gap-2 rounded-lg border border-border bg-transparent shadow-3d transition-all duration-300 hover:shadow-3d-hover">
-                        <Plus className="h-6 w-6 text-muted-foreground" />
-                        <span className="font-semibold text-foreground">Criar Manualmente</span>
-                    </button>
-                    <button className="flex h-16 flex-col items-center justify-center gap-2 rounded-lg border border-border bg-transparent shadow-3d transition-all duration-300 hover:shadow-3d-hover">
-                        <Upload className="h-6 w-6 text-muted-foreground" />
-                        <span className="font-semibold text-foreground">Importar Arquivo</span>
-                    </button>
-                </div>
-
+        <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Número de Flashcards:</label>
+                <span className="rounded-md bg-secondary px-2.5 py-0.5 text-sm font-semibold text-secondary-foreground">{sliderValue} cards</span>
             </div>
-            <div className="rounded-lg border border-border bg-card p-6 shadow-3d"><h3 className="text-sm font-medium text-muted-foreground">Áreas de Estudo</h3><div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">{studyAreas.map((area) => (<div key={area.id} onClick={() => handleStudyAreaClick(area)} className={`cursor-pointer rounded-xl border p-4 transition-all duration-300 hover:shadow-3d-hover ${area.bgGradient} ${area.borderColor}`}><div className="mb-3 flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-xl shadow-3d"><span className="text-2xl">{area.emoji}</span></div><div><h4 className={`font-bold ${area.textColor} font-heading`}>{area.name}</h4><p className="text-sm text-muted-foreground">{area.totalSets} conjuntos • {area.totalCards} cards</p></div><ChevronRight className="ml-auto h-5 w-5 text-muted-foreground" /></div></div>))}</div></div>
+            <input type="range" min="5" max="20" value={sliderValue} onChange={(e) => setSliderValue(e.target.value)} className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary" />
+            <div className="flex justify-between text-xs text-muted-foreground">
+                <span>5</span>
+                <span>20</span>
+            </div>
+        </div>
+
+        <button type="submit" className="flex w-full h-12 items-center justify-center gap-2 rounded-lg bg-primary text-lg font-semibold text-primary-foreground shadow-3d transition-all duration-300 hover:shadow-3d-hover">
+            <Brain className="h-5 w-5" />
+            Gerar Flashcards
+        </button>
+    </form>
+
+    {/* CAIXA IA INTELIGENTE E BOTÕES (CÓDIGO NOVO) */}
+    <div className="rounded-xl border border-accent/20 bg-gradient-to-r from-accent/10 to-secondary/10 p-4">
+        <div className="mb-2 flex items-center gap-2">
+            <Brain className="h-5 w-5 text-primary" />
+            <span className="font-semibold text-primary">IA Inteligente</span>
+        </div>
+        <p className="text-sm text-muted-foreground">
+            A nossa IA analisa o seu texto e cria automaticamente flashcards otimizados!
+        </p>
+    </div>
+
+    <div className="grid grid-cols-1 gap-4 border-t border-border pt-6 md:grid-cols-2">
+        <button className="flex h-16 flex-col items-center justify-center gap-2 rounded-lg border border-border bg-transparent shadow-3d transition-all duration-300 hover:shadow-3d-hover">
+            <Plus className="h-6 w-6 text-muted-foreground" />
+            <span className="font-semibold text-foreground">Criar Manualmente</span>
+        </button>
+        <button className="flex h-16 flex-col items-center justify-center gap-2 rounded-lg border border-border bg-transparent shadow-3d transition-all duration-300 hover:shadow-3d-hover">
+            <Upload className="h-6 w-6 text-muted-foreground" />
+            <span className="font-semibold text-foreground">Importar Arquivo</span>
+        </button>
+    </div>
+</div>
+            {/* ÁREAS DE ESTUDO - AGORA ATUALIZADO */}
+            <div className="rounded-lg border border-border bg-card p-6 shadow-3d">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold font-heading text-muted-foreground">Áreas de Estudo</h3>
+                    <button className="p-2 rounded-full hover:bg-muted"><Trophy className="w-5 w-5 text-purple-500"/></button>
+                </div>
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    {studyAreas.map((area) => (
+                        <div key={area.id} className={`p-4 rounded-2xl border ${area.borderColor} ${area.bgGradient} shadow-3d transition-all`}>
+                           <div onClick={() => handleStudyAreaClick(area)} className="flex items-center gap-3 mb-4 cursor-pointer">
+                                <div className="flex h-12 w-12 items-center justify-center rounded-xl shadow-3d bg-white/50"><span className="text-3xl">{area.emoji}</span></div>
+                                <div className="flex-1">
+                                    <h4 className={`font-bold font-heading ${area.textColor}`}>{area.name}</h4>
+                                    <p className="text-sm text-muted-foreground">{area.totalSets} conjuntos • {area.totalCards} cards</p>
+                                </div>
+                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                           </div>
+                           <div className="space-y-2">
+                               {area.topics.slice(0, 3).map(topic => (
+                                   <div key={topic.id} className="flex justify-between items-center bg-white/60 p-2 rounded-lg">
+                                        <span className="text-sm font-medium text-gray-800">{topic.name}</span>
+                                        <TopicBadge topic={topic}/>
+                                   </div>
+                               ))}
+                           </div>
+                           <button onClick={() => handleStudyAreaClick(area)} className={`w-full mt-4 rounded-lg py-2 font-semibold border-2 transition-colors hover:bg-white/50 ${area.buttonColor.includes('bg-primary') ? `bg-primary text-primary-foreground border-transparent` : `bg-transparent ${area.buttonColor}`}`}>Acessar {area.name}</button>
+                        </div>
+                    ))}
+                </div>
+            </div>
           </div>
           <div className="space-y-6">
             <div className="rounded-lg border border-border bg-card p-6 shadow-3d">
