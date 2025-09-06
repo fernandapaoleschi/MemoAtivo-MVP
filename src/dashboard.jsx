@@ -173,38 +173,62 @@ export default function MemoAtivoDashboard() {
     )
   }
 
-  if (currentView === "study-area" && selectedStudyArea) {
+if (currentView === "study-area" && selectedStudyArea) {
     return (
         <div className="min-h-screen bg-background">
             <Header onBackClick={handleBackToDashboard} />
             <main className="container mx-auto px-4 py-8">
                 <div className="mb-8 flex items-center gap-4">
-                    <div className={`flex h-16 w-16 items-center justify-center rounded-2xl border-2 ${selectedStudyArea.bgGradient} ${selectedStudyArea.borderColor} shadow-3d`}><span className="text-4xl">{selectedStudyArea.emoji}</span></div>
+                    <div className={`flex h-16 w-16 items-center justify-center rounded-2xl border-2 ${selectedStudyArea.bgGradient} ${selectedStudyArea.borderColor} shadow-3d`}>
+                        <span className="text-4xl">{selectedStudyArea.emoji}</span>
+                    </div>
                     <div>
                         <h1 className={`text-4xl font-bold ${selectedStudyArea.textColor} font-heading`}>{selectedStudyArea.name}</h1>
                         <p className="text-lg text-muted-foreground">{selectedStudyArea.totalSets} conjuntos • {selectedStudyArea.totalCards} flashcards</p>
                     </div>
                 </div>
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {selectedStudyArea.topics.map((topic) => (
-                        <div key={topic.id} onClick={() => handleTopicClick(topic)} className="cursor-pointer rounded-lg border border-border bg-card p-6 shadow-3d transition-all duration-300 hover:shadow-3d-hover">
-                            <div className="flex items-center justify-between"><span className={`${selectedStudyArea.textColor} font-heading font-bold text-xl`}>{topic.name}</span><ChevronRight className="h-5 w-5 text-muted-foreground" /></div>
-                            <div className="mt-4 flex items-center justify-between"><span className="text-sm text-muted-foreground">Flashcards</span><TopicBadge topic={topic} /></div>
-                        </div>
-                    ))}
-                    <div className="flex min-h-[150px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 text-center shadow-3d transition-all duration-300 hover:shadow-3d-hover"><div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-muted"><Plus className="h-6 w-6 text-muted-foreground" /></div><h3 className="font-semibold text-muted-foreground">Novo Tópico</h3></div>
+                    {selectedStudyArea.topics.map((topic) => {
+                        const progress = topic.status === 'completed' ? 100 : topic.status === 'active' ? 60 : 85;
+                        return (
+                            <div key={topic.id} className="cursor-pointer rounded-2xl border border-border bg-card p-6 shadow-3d transition-all duration-300 hover:shadow-3d-hover space-y-4">
+                                <div onClick={() => handleTopicClick(topic)} className="flex items-center justify-between">
+                                    <span className={`${selectedStudyArea.textColor} font-heading font-bold text-xl`}>{topic.name}</span>
+                                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                                </div>
+                                <div onClick={() => handleTopicClick(topic)}>
+                                    <div className="flex justify-between items-center text-sm text-muted-foreground mb-1">
+                                        <span>Flashcards</span>
+                                        <TopicBadge topic={topic}/>
+                                    </div>
+                                    <div className="flex justify-between text-sm text-muted-foreground mb-1">
+                                        <span>Progresso</span>
+                                        <span>{progress}%</span>
+                                    </div>
+                                    <div className="h-2 w-full rounded-full bg-muted"><div className="h-2 rounded-full bg-primary" style={{ width: `${progress}%` }}></div></div>
+                                </div>
+                                <button onClick={() => handleTopicClick(topic)} className={`w-full rounded-lg py-2 font-semibold transition-colors ${topic.status === 'completed' ? 'bg-secondary text-secondary-foreground' : 'bg-primary text-primary-foreground'}`}>
+                                    {topic.status === 'completed' ? 'Revisar' : 'Estudar'}
+                                </button>
+                            </div>
+                        )
+                    })}
+                    <div className="flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-muted-foreground/30 text-center shadow-inner transition-all duration-300 hover:bg-muted/50">
+                        <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-muted"><Plus className="h-6 w-6 text-muted-foreground" /></div>
+                        <h3 className="font-semibold text-muted-foreground">Novo Tópico</h3>
+                        <p className="text-sm text-muted-foreground">Adicione um novo tópico em {selectedStudyArea.name}</p>
+                    </div>
                 </div>
             </main>
         </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container mx-auto space-y-8 px-4 py-8">
         <section className="text-center space-y-4">
-          <h2 className="text-balance text-4xl font-bold gradient-bg-primary bg-clip-text text-transparent font-heading">Bem-vindo de volta, João! 🎯</h2>
+          <h2 className="text-balance text-4xl font-bold gradient-bg-primary bg-clip-text text-transparent font-heading">Bem-vindo de volta, João!</h2>
           <p className="mx-auto max-w-2xl text-lg text-pretty text-muted-foreground">Continue sua jornada de aprendizado. Você está fazendo um ótimo progresso!</p>
         </section>
 
@@ -388,4 +412,3 @@ export default function MemoAtivoDashboard() {
     </div>
   );
 }
-
