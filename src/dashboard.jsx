@@ -134,6 +134,10 @@ export default function MemoAtivoDashboard() {
   const [sliderValue, setSliderValue] = useState(10);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTopicName, setNewTopicName] = useState("");
+  const [selectedAreaId, setSelectedAreaId] = useState("");
+  const [selectedTopicId, setSelectedTopicId] = useState("");
+  const [flashcardCount, setFlashcardCount] = useState(5);
+  
 
   // --- LÓGICA DE NAVEGAÇÃO ---
   const handleStudyAreaClick = (studyArea) => { setSelectedStudyArea(studyArea); setCurrentView("study-area"); };
@@ -270,32 +274,101 @@ export default function MemoAtivoDashboard() {
   }
 
   if (currentView === "topic" && selectedTopic && selectedStudyArea) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header onBackClick={handleBackToStudyArea} />
-        <main className="container mx-auto px-4 py-8">
-          <div className="mb-8 flex items-center gap-4">
-            <div className={`flex h-16 w-16 items-center justify-center rounded-2xl border-2 ${selectedStudyArea.bgGradient} ${selectedStudyArea.borderColor} shadow-3d`}><span className="text-4xl">{selectedStudyArea.emoji}</span></div>
-            <div>
-              <h1 className={`text-4xl font-bold ${selectedStudyArea.textColor} font-heading`}>{selectedTopic.name}</h1>
-              <p className="text-lg text-muted-foreground">{selectedTopic.cardCount} flashcards • {selectedStudyArea.name}</p>
+  // calcula estatísticas simples
+  const total = selectedTopic.flashcards.length;
+  const novos = selectedTopic.flashcards.filter(c => c.status === "new").length;
+  const aprendendo = selectedTopic.flashcards.filter(c => c.status === "learning").length;
+  const revisar = selectedTopic.flashcards.filter(c => c.status === "review").length;
+  const dominados = selectedTopic.flashcards.filter(c => c.status === "mastered").length;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header onBackClick={handleBackToStudyArea} />
+      <main className="container mx-auto px-4 py-8 space-y-8">
+        
+        {/* Cabeçalho com breadcrumb */}
+        <div>
+          <p className="text-sm text-muted-foreground">
+            {selectedStudyArea.name} → {selectedTopic.name}
+          </p>
+          <h1 className="text-4xl font-bold font-heading text-primary">
+            {selectedTopic.name}
+          </h1>
+          <p className="text-muted-foreground">{total} flashcards • {selectedStudyArea.name}</p>
+        </div>
+
+        {/* Estatísticas */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="rounded-lg bg-card p-4 shadow-3d text-center">
+            <p className="text-sm text-muted-foreground">Novos</p>
+            <p className="text-2xl font-bold text-primary">{novos}</p>
+          </div>
+          <div className="rounded-lg bg-card p-4 shadow-3d text-center">
+            <p className="text-sm text-muted-foreground">Aprendendo</p>
+            <p className="text-2xl font-bold text-yellow-600">{aprendendo}</p>
+          </div>
+          <div className="rounded-lg bg-card p-4 shadow-3d text-center">
+            <p className="text-sm text-muted-foreground">Para Revisar</p>
+            <p className="text-2xl font-bold text-purple-600">{revisar}</p>
+          </div>
+          <div className="rounded-lg bg-card p-4 shadow-3d text-center">
+            <p className="text-sm text-muted-foreground">Dominados</p>
+            <p className="text-2xl font-bold text-green-600">{dominados}</p>
+          </div>
+        </div>
+
+        {/* Botões */}
+        <div className="flex gap-4">
+          <button
+            onClick={startStudyMode}
+            disabled={total === 0}
+            className="flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-white font-semibold shadow-3d disabled:bg-gray-400"
+          >
+            <Brain className="h-5 w-5" /> Iniciar Estudo
+            {total > 0 && <span className="ml-2 text-sm font-medium">{total} cards</span>}
+          </button>
+          <button className="rounded-lg border border-border px-6 py-3 font-semibold shadow-sm hover:bg-muted">
+            Ver Estatísticas
+          </button>
+        </div>
+
+        {/* Lista de Flashcards */}
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold mb-4">Flashcards</h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {selectedTopic.flashcards.map((card) => (
+              <div
+                key={card.id}
+                className="rounded-lg border border-border bg-card p-4 shadow-sm hover:shadow-md transition cursor-pointer"
+              >
+                {/* Badges de status e dificuldade */}
+                <div className="mb-2 flex gap-2">
+                  <span className="px-2 py-0.5 rounded-md bg-yellow-100 text-yellow-700 text-xs font-semibold">
+                    {card.status || "novo"}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 text-xs">
+                    {card.difficulty || "médio"}
+                  </span>
+                </div>
+
+                {/* Só mostra a pergunta */}
+                <p className="font-semibold text-primary mb-1">Pergunta:</p>
+                <p className="text-muted-foreground">{card.question}</p>
+              </div>
+            ))}
+
+            {/* botão adicionar */}
+            <div className="flex h-32 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 hover:bg-muted/30 transition">
+              <Plus className="h-6 w-6 text-muted-foreground mb-2" />
+              <span className="font-semibold text-muted-foreground text-sm">Adicionar Novo Flashcard</span>
             </div>
           </div>
-          <div className="mb-6 flex gap-4">
-            <button onClick={startStudyMode} disabled={selectedTopic.flashcards.length === 0} className="flex items-center gap-2 rounded-lg bg-primary py-3 px-6 text-lg font-semibold text-primary-foreground shadow-3d transition-all duration-300 hover:shadow-3d-hover disabled:cursor-not-allowed disabled:bg-gray-400"><Brain className="h-5 w-5" />Iniciar Estudo</button>
-          </div>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between"><h2 className="text-2xl font-bold font-heading">Flashcards</h2><button className="flex items-center gap-2 rounded-lg bg-primary py-2 px-4 font-semibold text-primary-foreground shadow-3d"><Plus className="h-4 w-4" />Adicionar Card</button></div>
-            {selectedTopic.flashcards.map((card) => (
-              <div key={card.id} className="rounded-lg border border-border bg-card p-6 shadow-3d"><p className="mb-2 text-lg font-semibold">{card.question}</p><p className="text-muted-foreground">{card.answer}</p></div>
-            ))}
-            <div className="flex h-32 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 text-center shadow-3d transition-all duration-300 hover:shadow-3d-hover"><div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-muted"><Plus className="h-6 w-6 text-muted-foreground" /></div><h3 className="font-semibold text-muted-foreground">Adicionar Novo Flashcard</h3></div>
-          </div>
-        </main>
-      </div>
-    )
-  }
-
+        </div>
+      </main>
+    </div>
+  );
+}
   if (currentView === "study-area" && selectedStudyArea) {
     return (
       <div className="min-h-screen bg-background">
@@ -417,43 +490,87 @@ export default function MemoAtivoDashboard() {
               {/* FORMULÁRIO (CÓDIGO NOVO) */}
               <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
                 <div className="space-y-2">
-                  <label htmlFor="study-area" className="text-sm font-medium text-foreground">Área de Estudo *</label>
-                  <select id="study-area" className="flex h-10 w-full items-center justify-between rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-                    <option>Selecione a área de estudo</option>
-                    {studyAreas.map(area => <option key={area.id} value={area.id}>{area.name}</option>)}
-                  </select>
-                  <p className="text-xs text-muted-foreground">Escolha em qual matéria os flashcards serão organizados.</p>
-                </div>
+  <label htmlFor="study-area" className="text-sm font-medium text-foreground">Área de Estudo *</label>
+  <select
+    id="study-area"
+    value={selectedAreaId}
+    onChange={(e) => {
+      setSelectedAreaId(e.target.value);
+      setSelectedTopicId(""); // reseta quando mudar área
+    }}
+    className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+  >
+    <option value="">Selecione a área de estudo</option>
+    {studyAreas.map(area => (
+      <option key={area.id} value={area.id}>{area.name}</option>
+    ))}
+  </select>
+  <p className="text-xs text-muted-foreground">Escolha em qual matéria os flashcards serão organizados.</p>
+</div>
 
-                <div className="space-y-2">
-                  <label htmlFor="specific-topic" className="text-sm font-medium text-foreground">Tópico Específico *</label>
-                  <input type="text" id="specific-topic" placeholder="Ex: Funções Quadráticas, Independência do Brasil..." className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-                  <p className="text-xs text-muted-foreground">Nome do tópico específico dentro da área de estudo selecionada.</p>
-                </div>
+{/* TÓPICO ESPECÍFICO */}
+<div className="space-y-2">
+  <label htmlFor="specific-topic" className="text-sm font-medium text-foreground">Tópico Específico *</label>
 
-                <div className="space-y-2">
-                  <label htmlFor="ia-description" className="text-sm font-medium text-foreground">Descrição para a IA *</label>
-                  <textarea id="ia-description" rows="4" placeholder="Ex: Detalhar os principais eventos que levaram à Independência do Brasil..." className="flex min-h-[80px] w-full rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
-                  <p className="text-xs text-muted-foreground">Quanto mais detalhes, melhores serão os flashcards.</p>
-                </div>
+  {selectedAreaId && studyAreas.find(area => area.id === selectedAreaId)?.topics.length > 0 ? (
+    <select
+      id="specific-topic"
+      value={selectedTopicId}
+      onChange={(e) => setSelectedTopicId(e.target.value)}
+      className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+    >
+      <option value="">Selecione um tópico existente</option>
+      {studyAreas.find(area => area.id === selectedAreaId).topics.map(topic => (
+        <option key={topic.id} value={topic.id}>{topic.name}</option>
+      ))}
+    </select>
+  ) : (
+    <input
+      type="text"
+      id="specific-topic"
+      placeholder="Digite um novo tópico..."
+      className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+    />
+  )}
 
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium">Número de Flashcards:</label>
-                    <span className="rounded-md bg-secondary px-2.5 py-0.5 text-sm font-semibold text-secondary-foreground">{sliderValue} cards</span>
-                  </div>
-                  <input type="range" min="5" max="20" value={sliderValue} onChange={(e) => setSliderValue(e.target.value)} className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary" />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>5</span>
-                    <span>20</span>
-                  </div>
-                </div>
+  <p className="text-xs text-muted-foreground">Escolha um tópico existente ou digite um novo.</p>
+</div>
 
+{/* DESCRIÇÃO PARA A IA */}
+<div className="space-y-2">
+  <label htmlFor="ia-description" className="text-sm font-medium text-foreground">Descrição para a IA *</label>
+  <textarea
+    id="ia-description"
+    placeholder="Ex: Detalhar os principais eventos que levaram à Independência do Brasil..."
+    className="flex min-h-[80px] w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+  />
+  <p className="text-xs text-muted-foreground">Cole aqui seu material de estudo. Quanto mais detalhes, melhores serão os flashcards.</p>
+</div>
                 <button type="submit" className="flex w-full h-12 items-center justify-center gap-2 rounded-lg bg-primary text-lg font-semibold text-primary-foreground shadow-3d transition-all duration-300 hover:shadow-3d-hover">
                   <Brain className="h-5 w-5" />
                   Gerar Flashcards
                 </button>
               </form>
+              <div className="space-y-2">
+  <label htmlFor="flashcard-count" className="text-sm font-medium text-foreground">Número de Flashcards:</label>
+  
+  <div className="flex items-center space-x-4">
+    <span className="text-sm text-muted-foreground">1</span>
+    <input
+      type="range"
+      id="flashcard-count"
+      min="1"
+      max="10"
+      value={flashcardCount}
+      onChange={(e) => setFlashcardCount(Number(e.target.value))}
+      className="flex-1"
+    />
+    <span className="text-sm text-muted-foreground">10</span>
+    <span className="px-2 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium">
+      {flashcardCount} cards
+    </span>
+  </div>
+</div>
 
               {/* CAIXA IA INTELIGENTE E BOTÕES (CÓDIGO NOVO) */}
               <div className="rounded-xl border border-accent/20 bg-gradient-to-r from-accent/10 to-secondary/10 p-4">
