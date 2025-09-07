@@ -17,7 +17,6 @@ import {
   ChevronRight,
   X,
 } from 'lucide-react';
-
 // --- DADOS INICIAIS ---
 const initialStudyAreas = [
   {
@@ -137,6 +136,10 @@ export default function MemoAtivoDashboard() {
   const [selectedAreaId, setSelectedAreaId] = useState("");
   const [selectedTopicId, setSelectedTopicId] = useState("");
   const [flashcardCount, setFlashcardCount] = useState(5);
+  const [isNewFlashcardModalOpen, setIsNewFlashcardModalOpen] = useState(false);
+  const [iaDescription, setIaDescription] = useState("");
+const [numFlashcards, setNumFlashcards] = useState(5);
+
   
 
   // --- LÓGICA DE NAVEGAÇÃO ---
@@ -232,6 +235,62 @@ export default function MemoAtivoDashboard() {
       {topic.status === "review" ? `Revisar hoje!` : `${topic.cardCount} cards`}
     </span>
   );
+const generateFlashcardsWithAI = async (description, count, topicId) => {
+  try {
+    const res = await fetch("http://localhost:5000/api/generate-flashcards", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ description, count }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Erro ao gerar flashcards");
+
+    const flashcardsWithMeta = data.result.map((fc, i) => ({
+      id: Date.now() + i,
+      question: fc.question,
+      answer: fc.answer,
+      status: "new",
+      difficulty: "médio",
+    }));
+
+    setStudyAreas((prev) => {
+      // 1) Descobre qual área contém o tópico
+      const areaIdx = prev.findIndex(a => a.topics.some(t => t.id === topicId));
+      if (areaIdx === -1) return prev; // tópico não encontrado
+
+      // 2) Atualiza apenas o tópico alvo
+      const updatedAreas = prev.map((area, idx) => {
+        if (idx !== areaIdx) return area;
+        return {
+          ...area,
+          topics: area.topics.map(t =>
+            t.id === topicId
+              ? {
+                  ...t,
+                  flashcards: [...(t.flashcards || []), ...flashcardsWithMeta],
+                  cardCount: (t.flashcards?.length || 0) + flashcardsWithMeta.length,
+                }
+              : t
+          ),
+        };
+      });
+
+      // 3) Sincroniza estados selecionados, se for o caso
+      const areaWithTopic = updatedAreas[areaIdx];
+      const updatedTopic = areaWithTopic.topics.find(t => t.id === topicId);
+
+      if (selectedTopic?.id === topicId) setSelectedTopic(updatedTopic);
+      if (selectedStudyArea?.id === areaWithTopic.id) setSelectedStudyArea(areaWithTopic);
+
+      return updatedAreas;
+    });
+  } catch (err) {
+    console.error("Erro:", err);
+    alert("Não foi possível gerar os flashcards.");
+  }
+};
+
   // --- VISTAS DA APLICAÇÃO ---
 
   if (studyMode && studyCards.length > 0) {
@@ -273,7 +332,7 @@ export default function MemoAtivoDashboard() {
     );
   }
 
-  if (currentView === "topic" && selectedTopic && selectedStudyArea) {
+if (currentView === "topic" && selectedTopic && selectedStudyArea) {
   // calcula estatísticas simples
   const total = selectedTopic.flashcards.length;
   const novos = selectedTopic.flashcards.filter(c => c.status === "new").length;
@@ -294,7 +353,9 @@ export default function MemoAtivoDashboard() {
           <h1 className="text-4xl font-bold font-heading text-primary">
             {selectedTopic.name}
           </h1>
-          <p className="text-muted-foreground">{total} flashcards • {selectedStudyArea.name}</p>
+          <p className="text-muted-foreground">
+            {total} flashcards • {selectedStudyArea.name}
+          </p>
         </div>
 
         {/* Estatísticas */}
@@ -325,7 +386,9 @@ export default function MemoAtivoDashboard() {
             className="flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-white font-semibold shadow-3d disabled:bg-gray-400"
           >
             <Brain className="h-5 w-5" /> Iniciar Estudo
-            {total > 0 && <span className="ml-2 text-sm font-medium">{total} cards</span>}
+            {total > 0 && (
+              <span className="ml-2 text-sm font-medium">{total} cards</span>
+            )}
           </button>
           <button className="rounded-lg border border-border px-6 py-3 font-semibold shadow-sm hover:bg-muted">
             Ver Estatísticas
@@ -358,17 +421,94 @@ export default function MemoAtivoDashboard() {
               </div>
             ))}
 
-            {/* botão adicionar */}
-            <div className="flex h-32 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 hover:bg-muted/30 transition">
+            {/* Botão adicionar */}
+            <div
+              onClick={() => setIsNewFlashcardModalOpen(true)}
+              className="flex h-32 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 hover:bg-muted/30 transition"
+            >
               <Plus className="h-6 w-6 text-muted-foreground mb-2" />
-              <span className="font-semibold text-muted-foreground text-sm">Adicionar Novo Flashcard</span>
+              <span className="font-semibold text-muted-foreground text-sm">
+                Adicionar Novo Flashcard
+              </span>
             </div>
           </div>
         </div>
       </main>
+
+      {/* Modal Novo Flashcard */}
+{/* Modal Novo Flashcard */}
+{isNewFlashcardModalOpen && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="w-full max-w-xl rounded-2xl bg-card p-6 shadow-xl">
+      
+      {/* Header modal */}
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-bold text-primary">Gerar Flashcards com IA</h2>
+        <button
+          onClick={() => setIsNewFlashcardModalOpen(false)}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Formulário IA */}
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">Descrição para a IA *</label>
+<textarea
+  id="ia-description"
+  value={iaDescription}
+  onChange={(e) => setIaDescription(e.target.value)}
+  placeholder="Descreva o conteúdo para virar flashcards..."
+  className="flex min-h-[80px] w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+/>
+          <p className="text-xs text-muted-foreground mt-1">
+            Quanto mais detalhes você fornecer, melhores serão os flashcards gerados.
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Número de Flashcards</label>
+          <input
+            type="range"
+            min="1"
+            max="10"
+            value={numFlashcards}
+            onChange={(e) => setNumFlashcards(Number(e.target.value))}
+            className="w-full"
+          />
+          <p className="text-sm text-muted-foreground mt-1">{numFlashcards} cards</p>
+        </div>
+      </div>
+
+      {/* Ações */}
+      <div className="flex justify-end gap-2 mt-6">
+        <button
+          onClick={() => setIsNewFlashcardModalOpen(false)}
+          className="px-4 py-2 rounded-lg border bg-muted text-muted-foreground hover:bg-muted/70"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={() => {
+            // 🔹 Aqui você chama a função que envia `iaDescription` para a API/IA
+            // e adiciona os flashcards retornados em `selectedTopic.flashcards`.
+            generateFlashcardsWithAI(iaDescription, numFlashcards, selectedTopic.id);
+            setIsNewFlashcardModalOpen(false);
+          }}
+          className="px-4 py-2 rounded-lg border bg-primary text-primary-foreground hover:opacity-90"
+        >
+          Gerar Flashcards
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }
+
   if (currentView === "study-area" && selectedStudyArea) {
     return (
       <div className="min-h-screen bg-background">
@@ -488,7 +628,19 @@ export default function MemoAtivoDashboard() {
               </div>
 
               {/* FORMULÁRIO (CÓDIGO NOVO) */}
-              <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+<form
+  className="space-y-6"
+  onSubmit={(e) => {
+    e.preventDefault();
+    if (!selectedAreaId || !selectedTopicId || !iaDescription) {
+      alert("Preencha área, tópico e descrição!");
+      return;
+    }
+    generateFlashcardsWithAI(iaDescription, flashcardCount, selectedTopicId);
+    setIaDescription(""); // limpa textarea depois de gerar
+  }}
+>
+
                 <div className="space-y-2">
   <label htmlFor="study-area" className="text-sm font-medium text-foreground">Área de Estudo *</label>
   <select
@@ -540,10 +692,12 @@ export default function MemoAtivoDashboard() {
 <div className="space-y-2">
   <label htmlFor="ia-description" className="text-sm font-medium text-foreground">Descrição para a IA *</label>
   <textarea
-    id="ia-description"
-    placeholder="Ex: Detalhar os principais eventos que levaram à Independência do Brasil..."
-    className="flex min-h-[80px] w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-  />
+  id="ia-description"
+  placeholder="Ex: Detalhar os principais eventos que levaram à Independência do Brasil..."
+  className="flex min-h-[80px] w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+  value={iaDescription}
+  onChange={(e) => setIaDescription(e.target.value)}
+/>
   <p className="text-xs text-muted-foreground">Cole aqui seu material de estudo. Quanto mais detalhes, melhores serão os flashcards.</p>
 </div>
                 <button type="submit" className="flex w-full h-12 items-center justify-center gap-2 rounded-lg bg-primary text-lg font-semibold text-primary-foreground shadow-3d transition-all duration-300 hover:shadow-3d-hover">
