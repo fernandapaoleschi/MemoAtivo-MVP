@@ -282,7 +282,7 @@ const markCard = (difficulty) => {
   );
 const generateFlashcardsWithAI = async (description, count, topicId) => {
   try {
-    const res = await fetch("http://localhost:5000/generate-flashcards", {
+    const res = await fetch("http://localhost:5000/api/generate-flashcards", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ description, count }),
