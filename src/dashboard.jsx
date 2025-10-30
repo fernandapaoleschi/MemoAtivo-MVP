@@ -203,6 +203,51 @@ const [numFlashcards, setNumFlashcards] = useState(5);
   };
   const exitStudyMode = () => { setStudyMode(false); setStudyCards([]); };
   const revealAnswer = () => setShowAnswer(true);
+ 
+const markCard = (difficulty) => {
+  const qualityMap = { hard: 1, medium: 2, easy: 3 };
+  const quality = qualityMap[difficulty];
+
+  // 1. Pega o card atual
+  const currentCard = studyCards[currentCardIndex];
+
+  // 2. Calcula os novos dados de repetição espaçada
+  const updatedCard = calculateSpacedRepetition(currentCard, quality);
+
+  // 3. Atualiza o estado principal 'studyAreas' com o card modificado
+  setStudyAreas((prevAreas) =>
+    prevAreas.map((area) => ({
+      ...area,
+      topics: area.topics.map((topic) => {
+        // Encontra o tópico correto para atualizar
+        if (topic.id !== selectedTopic.id) return topic;
+
+        return {
+          ...topic,
+          flashcards: topic.flashcards.map((card) =>
+            card.id === updatedCard.id ? updatedCard : card
+          ),
+        };
+      }),
+    }))
+  );
+  
+  // Sincroniza o estado do tópico selecionado se ele estiver aberto
+  setSelectedTopic(prevTopic => ({
+    ...prevTopic,
+    flashcards: prevTopic.flashcards.map(card => card.id === updatedCard.id ? updatedCard : card)
+  }));
+
+
+  // 4. Avança para o próximo card ou finaliza a sessão
+  if (currentCardIndex < studyCards.length - 1) {
+    setCurrentCardIndex(currentCardIndex + 1);
+    setShowAnswer(false);
+  } else {
+    exitStudyMode();
+  }
+};
+  /* Código anterior sem repetição espacada
   const markCard = (difficulty) => {
     if (currentCardIndex < studyCards.length - 1) {
       setCurrentCardIndex(currentCardIndex + 1);
@@ -211,7 +256,7 @@ const [numFlashcards, setNumFlashcards] = useState(5);
       exitStudyMode();
     }
   };
-
+*/
   // --- COMPONENTES DE UI REUTILIZÁVEIS ---
   const Header = ({ onBackClick }) => (
     <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-sm">
@@ -235,6 +280,68 @@ const [numFlashcards, setNumFlashcards] = useState(5);
       {topic.status === "review" ? `Revisar hoje!` : `${topic.cardCount} cards`}
     </span>
   );
+const generateFlashcardsWithAI = async (description, count, topicId) => {
+  try {
+    const res = await fetch("http://localhost:5000/generate-flashcards", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ description, count }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Erro ao gerar flashcards");
+
+    const flashcardsWithMeta = data.result.map((fc, i) => ({
+      id: Date.now() + i,
+      question: fc.question,
+      answer: fc.answer,
+      status: "new",
+      difficulty: "médio",
+    }));
+
+    let updatedData = {}; // 👈 Adicionado para guardar os dados novos
+
+    setStudyAreas((prev) => {
+      const areaIdx = prev.findIndex(a => a.topics.some(t => t.id === topicId));
+      if (areaIdx === -1) return prev;
+
+      const updatedAreas = prev.map((area, idx) => {
+        if (idx !== areaIdx) return area;
+        return {
+          ...area,
+          topics: area.topics.map(t =>
+            t.id === topicId
+              ? {
+                  ...t,
+                  flashcards: [...(t.flashcards || []), ...flashcardsWithMeta],
+                  cardCount: (t.flashcards?.length || 0) + flashcardsWithMeta.length,
+                }
+              : t
+          ),
+        };
+      });
+
+      const areaWithTopic = updatedAreas[areaIdx];
+      const updatedTopic = areaWithTopic.topics.find(t => t.id === topicId);
+
+      if (selectedTopic?.id === topicId) setSelectedTopic(updatedTopic);
+      if (selectedStudyArea?.id === areaWithTopic.id) setSelectedStudyArea(areaWithTopic);
+      
+      // 👈 Armazena os dados atualizados para retornar depois
+      updatedData = { area: areaWithTopic, topic: updatedTopic };
+
+      return updatedAreas;
+    });
+
+    return updatedData; // 👈 MUDANÇA PRINCIPAL: Retorna os dados atualizados
+
+  } catch (err) {
+    console.error("Erro:", err);
+    alert("Não foi possível gerar os flashcards.");
+    return null; // 👈 Retorna nulo em caso de erro
+  }
+};
+ {/* Codigo apresentando erro na geração dos flashcards 
 const generateFlashcardsWithAI = async (description, count, topicId) => {
   try {
     const res = await fetch("http://localhost:5000/api/generate-flashcards", {
@@ -290,7 +397,62 @@ const generateFlashcardsWithAI = async (description, count, topicId) => {
     alert("Não foi possível gerar os flashcards.");
   }
 };
+*/}
 
+// 👇 COLE ESTE NOVO BLOCO DE CÓDIGO 👇
+
+// --- LÓGICA DE REPETIÇÃO ESPAÇADA (SRS) ---
+const calculateSpacedRepetition = (card, quality) => {
+  // Parâmetros do algoritmo SM-2 (simplificado)
+  const EASE_FACTOR_DEFAULT = 2.5;
+
+  // Pega os dados do card ou define valores padrão se for a primeira vez
+  let easeFactor = card.easeFactor || EASE_FACTOR_DEFAULT;
+  let interval = card.interval || 0;
+  let repetitions = card.repetitions || 0;
+
+  // Calcula o novo intervalo com base na qualidade da resposta
+  if (quality < 2) { // "Difícil"
+    repetitions = 0; // Reseta o progresso
+    interval = 1; // Revisar amanhã
+    easeFactor = Math.max(1.3, easeFactor - 0.2); // Diminui a facilidade
+  } else { // "Médio" ou "Fácil"
+    repetitions += 1;
+    if (repetitions === 1) {
+      interval = 1; // Primeira vez, revisar amanhã
+    } else if (repetitions === 2) {
+      interval = 6; // Segunda vez, revisar em 6 dias
+    } else {
+      interval = Math.ceil(interval * easeFactor);
+    }
+
+    // Ajusta o fator de facilidade
+    if (quality === 3) { // "Fácil"
+      easeFactor += 0.15;
+    } else if (quality === 2) { // "Médio"
+      // Fator de facilidade não muda
+    }
+  }
+
+  // Define a próxima data de revisão
+  const today = new Date();
+  const nextReviewDate = new Date(today);
+  nextReviewDate.setDate(today.getDate() + interval);
+
+  // Determina o novo status do card
+  const newStatus = interval > 30 ? "mastered" : "learning";
+
+  // Retorna o card com os dados atualizados
+  return {
+    ...card,
+    easeFactor,
+    interval,
+    repetitions,
+    reviewDate: nextReviewDate.toISOString(), // Salva a data em formato padrão
+    status: newStatus,
+    lastReviewed: new Date().toISOString(),
+  };
+};
   // --- VISTAS DA APLICAÇÃO ---
 
   if (studyMode && studyCards.length > 0) {
@@ -630,6 +792,31 @@ if (currentView === "topic" && selectedTopic && selectedStudyArea) {
               {/* FORMULÁRIO (CÓDIGO NOVO) */}
 <form
   className="space-y-6"
+  onSubmit={async (e) => { // 👈 Adicione 'async' aqui
+    e.preventDefault();
+    if (!selectedAreaId || !selectedTopicId || !iaDescription) {
+      alert("Preencha área, tópico e descrição!");
+      return;
+    }
+    
+    // ✅ Chama a função para gerar e ESPERA ela terminar
+    await generateFlashcardsWithAI(iaDescription, flashcardCount, selectedTopicId);
+    
+    // ✅ Após gerar, encontra a área e o tópico atualizados
+    const updatedArea = studyAreas.find(area => area.id === selectedAreaId);
+    const updatedTopic = updatedArea?.topics.find(topic => topic.id === selectedTopicId);
+
+    // ✅ Navega para a tela do tópico para mostrar os novos cards!
+    if (updatedTopic) {
+      handleTopicClick(updatedTopic);
+    }
+    
+    setIaDescription(""); // limpa textarea depois de gerar
+  }}
+>              
+{/*  Código anterior apresentando erro para gerar os flashcards            
+<form
+  className="space-y-6"
   onSubmit={(e) => {
     e.preventDefault();
     if (!selectedAreaId || !selectedTopicId || !iaDescription) {
@@ -640,7 +827,7 @@ if (currentView === "topic" && selectedTopic && selectedStudyArea) {
     setIaDescription(""); // limpa textarea depois de gerar
   }}
 >
-
+*/}
                 <div className="space-y-2">
   <label htmlFor="study-area" className="text-sm font-medium text-foreground">Área de Estudo *</label>
   <select
