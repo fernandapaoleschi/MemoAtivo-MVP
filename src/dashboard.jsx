@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   BookOpen,
   Brain,
@@ -17,8 +17,9 @@ import {
   ChevronRight,
   X,
 } from 'lucide-react';
+
 // --- DADOS INICIAIS ---
-const initialStudyAreas = [
+const studyAreasData = [
   {
     id: "matematica",
     name: "Matemática",
@@ -29,8 +30,7 @@ const initialStudyAreas = [
     textColor: "text-blue-700",
     buttonColor: "border-blue-700 text-blue-700",
     hoverButtonColor: "hover:bg-blue-700 hover:text-white",
-    totalSets: 3,
-    totalCards: 45,
+    
     topics: [
       {
         id: "funcoes",
@@ -75,8 +75,7 @@ const initialStudyAreas = [
     textColor: "text-cyan-800",
     buttonColor: "border-cyan-700 text-cyan-800",
     hoverButtonColor: "hover:bg-cyan-700 hover:text-white",
-    totalSets: 2,
-    totalCards: 28,
+    
     topics: [
       { id: "brasil-colonial", name: "Brasil Colonial", cardCount: 16, status: "active", flashcards: [] },
       { id: "republica", name: "República", cardCount: 12, status: "completed", flashcards: [] }
@@ -92,14 +91,14 @@ const initialStudyAreas = [
     textColor: "text-green-700",
     buttonColor: "border-green-600 text-green-700",
     hoverButtonColor: "hover:bg-green-600 hover:text-white",
-    totalSets: 4,
-    totalCards: 62,
+    
     topics: [
       { id: "genetica", name: "Genética", cardCount: 20, status: "active", flashcards: [] },
       { id: "citologia", name: "Citologia", cardCount: 18, status: "active", flashcards: [] },
       { id: "ecologia", name: "Ecologia", cardCount: 14, status: "completed", flashcards: [] }
     ]
   },
+  // ... (continuação do initialStudyAreas)
   {
     id: "quimica",
     name: "Química",
@@ -110,21 +109,116 @@ const initialStudyAreas = [
     textColor: "text-amber-800",
     buttonColor: "border-amber-700 text-amber-800",
     hoverButtonColor: "hover:bg-amber-700 hover:text-white",
-    totalSets: 3,
-    totalCards: 38,
+    
     topics: [
-      { id: "organica", name: "Orgânica", cardCount: 15, status: "review", lastReviewed: "hoje", flashcards: [] },
-      { id: "inorganica", name: "Inorgânica", cardCount: 15, status: "active", flashcards: [] },
-      { id: "fisico-quimica", name: "Físico-Química", cardCount: 8, status: "completed", flashcards: [] }
+      // Tópico 1: Orgânica (com 2 cards de exemplo)
+      {
+        id: "organica",
+        name: "Orgânica",
+        cardCount: 2, // Corrigido
+        status: "active", // ou o status que preferir
+        lastReviewed: "",
+        flashcards: [
+          {
+            id: "q1",
+            question: "O que é um carbono quiral?",
+            answer: "É um átomo de carbono que está ligado a quatro grupos diferentes.",
+            difficulty: "medium",
+            status: "new",
+          },
+          {
+            id: "q2",
+            question: "Qual é a fórmula geral de um alcano?",
+            answer: "CnH2n+2",
+            difficulty: "easy",
+            status: "learning",
+          }
+        ]
+      },
+      // Tópico 2: Inorgânica (com 2 cards de exemplo)
+      {
+        id: "inorganica",
+        name: "Inorgânica",
+        cardCount: 2, // Corrigido
+        status: "active",
+        flashcards: [
+          {
+            id: "q3",
+            question: "O que é uma ligação iônica?",
+            answer: "É a ligação formada pela atração eletrostática entre íons de cargas opostas.",
+            difficulty: "easy",
+            status: "new"
+          },
+          {
+            id: "q4",
+            question: "Qual é o nome do composto H2SO4?",
+            answer: "Ácido Sulfúrico.",
+            difficulty: "easy",
+            status: "new"
+          }
+        ]
+      },
+      // Tópico 3: Físico-Química (com 1 card de exemplo)
+      {
+        id: "fisico-quimica",
+        name: "Físico-Química",
+        cardCount: 1, // Corrigido
+        status: "completed",
+        flashcards: [
+          {
+            id: "q5",
+            question: "O que é entalpia?",
+            answer: "É a medida da energia total em um sistema termodinâmico.",
+            difficulty: "medium",
+            status: "mastered" // 'mastered' para testar a lógica do botão
+          }
+        ]
+      }
     ]
   },
 ];
 
+// --- PROCESSAMENTO AUTOMÁTICO DOS TOTAIS (V2 - CORRIGIDO) ---
+const initialStudyAreas = studyAreasData.map(area => {
+  
+  // 1. Processa os tópicos PRIMEIRO para corrigir o cardCount
+  const processedTopics = area.topics.map(topic => {
+    // Calcula o cardCount real com base no tamanho do array de flashcards
+    const realCardCount = topic.flashcards.length; 
+    
+    return {
+      ...topic,
+      cardCount: realCardCount // <-- CORRIGE O cardCount (ex: Geometria de 18 para 1)
+    };
+  });
+
+  // 2. Calcula o total de conjuntos (tópicos)
+  const totalSets = processedTopics.length;
+  
+  // 3. Soma o 'cardCount' JÁ CORRIGIDO de cada tópico
+  const totalCards = processedTopics.reduce((sum, topic) => sum + topic.cardCount, 0);
+
+  // 4. Retorna a área com dados 100% corretos
+  return {
+    ...area,
+    topics: processedTopics, // <-- Usa os tópicos já processados
+    totalSets,
+    totalCards
+  };
+});
+
 // --- COMPONENTE PRINCIPAL ---
 export default function MemoAtivoDashboard() {
+  
+  // 1. INICIALIZE O ESTADO DIRETAMENTE COM OS DADOS PADRÃO.
   const [studyAreas, setStudyAreas] = useState(initialStudyAreas);
+  
+  // 2. ADICIONE UM NOVO ESTADO DE CONTROLE DE CARREGAMENTO
+  const [isLoading, setIsLoading] = useState(true); 
+
+  // Mantenha todos os seus outros useStates aqui:
   const [currentView, setCurrentView] = useState("dashboard");
-  const [selectedStudyArea, setSelectedStudyArea] = useState(null); // ✅ adicionado
+  const [selectedStudyArea, setSelectedStudyArea] = useState(null); 
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [studyMode, setStudyMode] = useState(false);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -138,9 +232,29 @@ export default function MemoAtivoDashboard() {
   const [flashcardCount, setFlashcardCount] = useState(5);
   const [isNewFlashcardModalOpen, setIsNewFlashcardModalOpen] = useState(false);
   const [iaDescription, setIaDescription] = useState("");
-const [numFlashcards, setNumFlashcards] = useState(5);
+  const [numFlashcards, setNumFlashcards] = useState(5);
 
-  
+  // 3. USE EFFECT PARA CARREGAR OS DADOS (APENAS UMA VEZ)
+  useEffect(() => {
+    const savedData = localStorage.getItem("memoAtivoStudyAreas");
+    if (savedData && savedData !== "undefined" && savedData !== "null") {
+      try {
+        const parsedData = JSON.parse(savedData);
+        setStudyAreas(parsedData); // Substitui o estado inicial pelos dados salvos
+      } catch (e) {
+        console.error("Erro ao carregar dados salvos, usando dados iniciais.", e);
+      }
+    }
+    setIsLoading(false); // Marca que o carregamento inicial terminou
+  }, []); // O array vazio [] garante que este efeito rode SÓ UMA VEZ.
+
+  // 4. USE EFFECT PARA SALVAR OS DADOS (QUANDO MUDAM)
+  useEffect(() => {
+    // Só salva no localStorage APÓS o carregamento inicial ter sido concluído.
+    if (!isLoading) {
+      localStorage.setItem("memoAtivoStudyAreas", JSON.stringify(studyAreas));
+    }
+  }, [studyAreas, isLoading]); // Roda sempre que 'studyAreas' ou 'isLoading' mudar. 
 
   // --- LÓGICA DE NAVEGAÇÃO ---
   const handleStudyAreaClick = (studyArea) => { setSelectedStudyArea(studyArea); setCurrentView("study-area"); };
@@ -173,6 +287,7 @@ const [numFlashcards, setNumFlashcards] = useState(5);
           ...area,
           topics: [...area.topics, newTopic],
           totalSets: area.totalSets + 1,
+          totalCards: area.totalCards + newTopic.cardCount,
         };
       }
       return area;
@@ -188,11 +303,115 @@ const [numFlashcards, setNumFlashcards] = useState(5);
     closeNewTopicModal();
   };
 
+  //Deletar cards (CORRIGIDO E ROBUSTO - V3 - FINAL)
+const handleDeleteCard = (areaId, topicId, cardIdToDelete) => {
+  if (!window.confirm("Tem certeza que deseja excluir este flashcard?")) return;
+
+  // --- Parte 1: Atualiza o estado principal (e o localStorage) ---
+  // Isso é assíncrono, mas garante que os dados serão salvos corretamente.
+  setStudyAreas((prevAreas) => {
+    return prevAreas.map((area) => {
+      // CORREÇÃO: Usa o 'areaId' que recebemos, não o 'selectedStudyArea'
+      if (area.id !== areaId) return area;
+
+      let cardsRemoved = 0;
+
+      const updatedTopics = area.topics.map((topic) => {
+        // CORREÇÃO: Usa o 'topicId' que recebemos, não o 'selectedTopic'
+        if (topic.id !== topicId) return topic;
+
+        const originalLength = topic.flashcards.length;
+        const updatedFlashcards = topic.flashcards.filter(
+          (card) => card.id !== cardIdToDelete
+        );
+
+        cardsRemoved = originalLength - updatedFlashcards.length;
+
+        return {
+          ...topic,
+          flashcards: updatedFlashcards,
+          cardCount: updatedFlashcards.length,
+        };
+      });
+
+      return {
+        ...area,
+        topics: updatedTopics,
+        totalCards: area.totalCards - cardsRemoved,
+      };
+    });
+  });
+  
+  // --- Parte 2: Atualiza a UI (o estado local) IMEDIATAMENTE ---
+  // Esta lógica agora roda de forma síncrona.
+  
+  // A) Se o tópico que estamos vendo na tela é o mesmo do card apagado...
+  if (selectedTopic?.id === topicId) {
+    setSelectedTopic((prevTopic) => {
+      const updatedFlashcards = prevTopic.flashcards.filter(
+        (card) => card.id !== cardIdToDelete
+      );
+      return {
+        ...prevTopic,
+        flashcards: updatedFlashcards,
+        cardCount: updatedFlashcards.length,
+      };
+    });
+  }
+  
+  // B) Se a área que estamos vendo na tela é a mesma do card apagado...
+  // (Isso atualiza os contadores na tela de "study-area")
+  if (selectedStudyArea?.id === areaId) {
+     setSelectedStudyArea((prevArea) => {
+        const updatedTopics = prevArea.topics.map(topic => {
+           if (topic.id === topicId) {
+               const updatedFlashcards = topic.flashcards.filter(
+                   (card) => card.id !== cardIdToDelete
+               );
+               return {
+                 ...topic,
+                 flashcards: updatedFlashcards,
+                 cardCount: updatedFlashcards.length
+               };
+           }
+           return topic;
+        });
+
+        // Recalcula o total de cards da área
+        const newTotalCards = updatedTopics.reduce((sum, topic) => sum + topic.cardCount, 0);
+
+        return {
+          ...prevArea,
+          topics: updatedTopics,
+          totalCards: newTotalCards
+        };
+     });
+  }
+};
 
   // --- LÓGICA DO MODO DE ESTUDO ---
   const startStudyMode = () => {
     if (selectedTopic) {
-      const cardsToStudy = selectedTopic.flashcards.filter((card) => card.status !== "mastered");
+      
+      // --- FILTRO CORRIGIDO (Verifica a data) ---
+      const now = new Date();
+      const cardsToStudy = selectedTopic.flashcards.filter(card => {
+        // 1. Pega todos os cards 'Novos'
+        if (card.status === "new") return true;
+        
+        // 2. Pega todos os cards 'Para Revisar' (agendados manualmente)
+        if (card.status === "review") return true;
+        
+        // 3. Pega os 'Aprendendo' cuja data de revisão já chegou
+        if (card.status === "learning" && new Date(card.reviewDate) <= now) {
+          return true;
+        }
+        
+        // Ignora o resto
+        return false;
+      });
+      // ------------------------------------------
+
       if (cardsToStudy.length > 0) {
         setStudyCards(cardsToStudy);
         setCurrentCardIndex(0);
@@ -203,60 +422,92 @@ const [numFlashcards, setNumFlashcards] = useState(5);
   };
   const exitStudyMode = () => { setStudyMode(false); setStudyCards([]); };
   const revealAnswer = () => setShowAnswer(true);
- 
-const markCard = (difficulty) => {
-  const qualityMap = { hard: 1, medium: 2, easy: 3 };
-  const quality = qualityMap[difficulty];
-
-  // 1. Pega o card atual
-  const currentCard = studyCards[currentCardIndex];
-
-  // 2. Calcula os novos dados de repetição espaçada
-  const updatedCard = calculateSpacedRepetition(currentCard, quality);
-
-  // 3. Atualiza o estado principal 'studyAreas' com o card modificado
-  setStudyAreas((prevAreas) =>
-    prevAreas.map((area) => ({
-      ...area,
-      topics: area.topics.map((topic) => {
-        // Encontra o tópico correto para atualizar
-        if (topic.id !== selectedTopic.id) return topic;
-
-        return {
-          ...topic,
-          flashcards: topic.flashcards.map((card) =>
-            card.id === updatedCard.id ? updatedCard : card
-          ),
-        };
-      }),
-    }))
-  );
   
-  // Sincroniza o estado do tópico selecionado se ele estiver aberto
-  setSelectedTopic(prevTopic => ({
-    ...prevTopic,
-    flashcards: prevTopic.flashcards.map(card => card.id === updatedCard.id ? updatedCard : card)
-  }));
-
-
-  // 4. Avança para o próximo card ou finaliza a sessão
-  if (currentCardIndex < studyCards.length - 1) {
-    setCurrentCardIndex(currentCardIndex + 1);
-    setShowAnswer(false);
-  } else {
-    exitStudyMode();
-  }
-};
-  /* Código anterior sem repetição espacada
   const markCard = (difficulty) => {
-    if (currentCardIndex < studyCards.length - 1) {
+    const qualityMap = { hard: 1, medium: 2, easy: 3 };
+    const quality = qualityMap[difficulty];
+
+    // 1. Pega o card atual
+    const currentCard = studyCards[currentCardIndex];
+
+    // 2. Calcula os novos dados de repetição espaçada
+    const updatedCard = calculateSpacedRepetition(currentCard, quality);
+
+    // 3. Verifica se este é o último card da sessão
+    const isLastCard = currentCardIndex >= studyCards.length - 1;
+
+    // 4. Atualiza o estado 'studyAreas' (a fonte da verdade)
+    setStudyAreas((prevAreas) =>
+      prevAreas.map((area) => {
+        // Se não for a área certa, não mexe
+        if (area.id !== selectedStudyArea.id) return area;
+
+        // É a área certa, atualiza os tópicos
+        return {
+          ...area,
+          topics: area.topics.map((topic) => {
+            // Se não for o tópico certo, não mexe
+            if (topic.id !== selectedTopic.id) return topic;
+
+            // É o tópico certo! Vamos atualizá-lo.
+            
+            // Primeiro, atualiza o flashcard que acabamos de estudar
+            const updatedFlashcards = topic.flashcards.map((card) =>
+              card.id === updatedCard.id ? updatedCard : card
+            );
+
+            // Segundo, verifica se a sessão terminou para atualizar o tópico
+            if (isLastCard) {
+              // Sessão terminou! Atualiza o card E o status do tópico
+              return {
+                ...topic,
+                status: "active", // <-- Muda o status do TÓPICO
+                lastReviewed: new Date().toISOString(),
+                flashcards: updatedFlashcards, // <-- Salva o card atualizado
+              };
+            } else {
+              // Sessão ainda não terminou. Apenas atualiza o card
+              return {
+                ...topic,
+                flashcards: updatedFlashcards, // <-- Salva o card atualizado
+              };
+            }
+          }),
+        };
+      })
+    );
+
+    // 5. Atualiza o estado local 'selectedTopic' para a UI reagir
+    // (Isso é importante para a tela "topic" atualizar imediatamente)
+    setSelectedTopic((prevTopic) => {
+      const updatedFlashcards = prevTopic.flashcards.map((card) =>
+        card.id === updatedCard.id ? updatedCard : card
+      );
+      
+      if (isLastCard) {
+        return {
+          ...prevTopic,
+          status: "active",
+          lastReviewed: new Date().toISOString(),
+          flashcards: updatedFlashcards,
+        };
+      } else {
+        return {
+          ...prevTopic,
+          flashcards: updatedFlashcards,
+        };
+      }
+    });
+
+    // 6. Avança para o próximo card ou finaliza a sessão
+    if (isLastCard) {
+      exitStudyMode();
+    } else {
       setCurrentCardIndex(currentCardIndex + 1);
       setShowAnswer(false);
-    } else {
-      exitStudyMode();
     }
   };
-*/
+
   // --- COMPONENTES DE UI REUTILIZÁVEIS ---
   const Header = ({ onBackClick }) => (
     <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-sm">
@@ -275,184 +526,187 @@ const markCard = (difficulty) => {
     </header>
   );
 
-  const TopicBadge = ({ topic }) => (
-    <span className={`px-2 py-1 text-xs font-semibold rounded-lg ${topic.status === "review" ? "bg-red-100 text-red-700" : topic.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
-      {topic.status === "review" ? `Revisar hoje!` : `${topic.cardCount} cards`}
-    </span>
-  );
-const generateFlashcardsWithAI = async (description, count, topicId) => {
-  try {
-    const res = await fetch("http://localhost:5000/api/generate-flashcards", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ description, count }),
-    });
+  
+  const TopicBadge = ({ topic }) => {
+    const now = new Date();
+    
+    // 1. Verifica se tem cartões "new"
+    const hasNewCards = topic.flashcards.some(c => c.status === "new");
+    
+    // 2. Verifica se tem cartões "learning" vencidos
+    const hasLearningDue = topic.flashcards.some(
+      c => c.status === "learning" && new Date(c.reviewDate) <= now
+    );
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Erro ao gerar flashcards");
+    // 3. Define se o badge deve ser vermelho
+    // O badge é vermelho se:
+    //   a) O status do tópico for "review" (o manual que corrigimos)
+    //   b) Tiver cartões novos
+    //   c) Tiver cartões de aprendizado vencidos
+    const needsReview = topic.status === "review" || hasNewCards || hasLearningDue;
+    
+    // 4. Define se está completo
+    // Só está completo se NÃO precisar de revisão e o status for "completed"
+    const isCompleted = !needsReview && topic.status === 'completed';
 
-    const flashcardsWithMeta = data.result.map((fc, i) => ({
-      id: Date.now() + i,
-      question: fc.question,
-      answer: fc.answer,
-      status: "new",
-      difficulty: "médio",
-    }));
+    // 5. Define a cor e o texto
+    let badgeClass = 'bg-muted text-muted-foreground'; // Padrão (active)
+    let badgeText = `${topic.cardCount} cards`;
 
-    let updatedData = {}; // 👈 Adicionado para guardar os dados novos
-
-    setStudyAreas((prev) => {
-      const areaIdx = prev.findIndex(a => a.topics.some(t => t.id === topicId));
-      if (areaIdx === -1) return prev;
-
-      const updatedAreas = prev.map((area, idx) => {
-        if (idx !== areaIdx) return area;
-        return {
-          ...area,
-          topics: area.topics.map(t =>
-            t.id === topicId
-              ? {
-                  ...t,
-                  flashcards: [...(t.flashcards || []), ...flashcardsWithMeta],
-                  cardCount: (t.flashcards?.length || 0) + flashcardsWithMeta.length,
-                }
-              : t
-          ),
-        };
-      });
-
-      const areaWithTopic = updatedAreas[areaIdx];
-      const updatedTopic = areaWithTopic.topics.find(t => t.id === topicId);
-
-      if (selectedTopic?.id === topicId) setSelectedTopic(updatedTopic);
-      if (selectedStudyArea?.id === areaWithTopic.id) setSelectedStudyArea(areaWithTopic);
-      
-      // 👈 Armazena os dados atualizados para retornar depois
-      updatedData = { area: areaWithTopic, topic: updatedTopic };
-
-      return updatedAreas;
-    });
-
-    return updatedData; // 👈 MUDANÇA PRINCIPAL: Retorna os dados atualizados
-
-  } catch (err) {
-    console.error("Erro:", err);
-    alert("Não foi possível gerar os flashcards.");
-    return null; // 👈 Retorna nulo em caso de erro
-  }
-};
- {/* Codigo apresentando erro na geração dos flashcards 
-const generateFlashcardsWithAI = async (description, count, topicId) => {
-  try {
-    const res = await fetch("http://localhost:5000/api/generate-flashcards", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ description, count }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Erro ao gerar flashcards");
-
-    const flashcardsWithMeta = data.result.map((fc, i) => ({
-      id: Date.now() + i,
-      question: fc.question,
-      answer: fc.answer,
-      status: "new",
-      difficulty: "médio",
-    }));
-
-    setStudyAreas((prev) => {
-      // 1) Descobre qual área contém o tópico
-      const areaIdx = prev.findIndex(a => a.topics.some(t => t.id === topicId));
-      if (areaIdx === -1) return prev; // tópico não encontrado
-
-      // 2) Atualiza apenas o tópico alvo
-      const updatedAreas = prev.map((area, idx) => {
-        if (idx !== areaIdx) return area;
-        return {
-          ...area,
-          topics: area.topics.map(t =>
-            t.id === topicId
-              ? {
-                  ...t,
-                  flashcards: [...(t.flashcards || []), ...flashcardsWithMeta],
-                  cardCount: (t.flashcards?.length || 0) + flashcardsWithMeta.length,
-                }
-              : t
-          ),
-        };
-      });
-
-      // 3) Sincroniza estados selecionados, se for o caso
-      const areaWithTopic = updatedAreas[areaIdx];
-      const updatedTopic = areaWithTopic.topics.find(t => t.id === topicId);
-
-      if (selectedTopic?.id === topicId) setSelectedTopic(updatedTopic);
-      if (selectedStudyArea?.id === areaWithTopic.id) setSelectedStudyArea(areaWithTopic);
-
-      return updatedAreas;
-    });
-  } catch (err) {
-    console.error("Erro:", err);
-    alert("Não foi possível gerar os flashcards.");
-  }
-};
-*/}
-
-// 👇 COLE ESTE NOVO BLOCO DE CÓDIGO 👇
-
-// --- LÓGICA DE REPETIÇÃO ESPAÇADA (SRS) ---
-const calculateSpacedRepetition = (card, quality) => {
-  // Parâmetros do algoritmo SM-2 (simplificado)
-  const EASE_FACTOR_DEFAULT = 2.5;
-
-  // Pega os dados do card ou define valores padrão se for a primeira vez
-  let easeFactor = card.easeFactor || EASE_FACTOR_DEFAULT;
-  let interval = card.interval || 0;
-  let repetitions = card.repetitions || 0;
-
-  // Calcula o novo intervalo com base na qualidade da resposta
-  if (quality < 2) { // "Difícil"
-    repetitions = 0; // Reseta o progresso
-    interval = 1; // Revisar amanhã
-    easeFactor = Math.max(1.3, easeFactor - 0.2); // Diminui a facilidade
-  } else { // "Médio" ou "Fácil"
-    repetitions += 1;
-    if (repetitions === 1) {
-      interval = 1; // Primeira vez, revisar amanhã
-    } else if (repetitions === 2) {
-      interval = 6; // Segunda vez, revisar em 6 dias
-    } else {
-      interval = Math.ceil(interval * easeFactor);
+    if (needsReview) {
+      badgeClass = 'bg-red-100 text-red-700';
+      badgeText = 'Revisar hoje!';
+    } else if (isCompleted) {
+      badgeClass = 'bg-green-100 text-green-700';
     }
 
-    // Ajusta o fator de facilidade
-    if (quality === 3) { // "Fácil"
-      easeFactor += 0.15;
-    } else if (quality === 2) { // "Médio"
-      // Fator de facilidade não muda
-    }
-  }
-
-  // Define a próxima data de revisão
-  const today = new Date();
-  const nextReviewDate = new Date(today);
-  nextReviewDate.setDate(today.getDate() + interval);
-
-  // Determina o novo status do card
-  const newStatus = interval > 30 ? "mastered" : "learning";
-
-  // Retorna o card com os dados atualizados
-  return {
-    ...card,
-    easeFactor,
-    interval,
-    repetitions,
-    reviewDate: nextReviewDate.toISOString(), // Salva a data em formato padrão
-    status: newStatus,
-    lastReviewed: new Date().toISOString(),
+    return (
+      <span className={`px-2 py-1 text-xs font-semibold rounded-lg ${badgeClass}`}>
+        {badgeText}
+      </span>
+    );
   };
-};
+  const generateFlashcardsWithAI = async (description, count, topicId) => {
+    try {
+      const res = await fetch("http://localhost:5000/api/generate-flashcards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description, count }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erro ao gerar flashcards");
+
+      const flashcardsWithMeta = data.result.map((fc, i) => ({
+        id: Date.now() + i,
+        question: fc.question,
+        answer: fc.answer,
+        status: "new",
+        difficulty: "médio",
+      }));
+
+      let updatedData = {}; // 👈 Adicionado para guardar os dados novos
+
+      setStudyAreas((prev) => {
+        const areaIdx = prev.findIndex(a => a.topics.some(t => t.id === topicId));
+        if (areaIdx === -1) return prev;
+              
+        const updatedAreas = prev.map((area, idx) => {
+          // Se não for a área de estudo certa, apenas retorna a área
+          if (idx !== areaIdx) return area;
+
+          // É a área de estudo certa.
+          // 1. Atualiza os tópicos
+          const updatedTopics = area.topics.map(t =>
+            t.id === topicId
+              ? {
+                  ...t,
+                  flashcards: [...(t.flashcards || []), ...flashcardsWithMeta],
+                  // ✅ BUG 1 CORRIGIDO: Usa t.cardCount (o número) em vez de t.flashcards.length (o array)
+                  cardCount: t.cardCount + flashcardsWithMeta.length, 
+                }
+              : t
+          );
+
+          // 2. Retorna a área atualizada, somando os novos cards ao total
+          return {
+            ...area,
+            topics: updatedTopics,
+            // ✅ BUG 2 CORRIGIDO: Soma os novos cards ao totalCards da área
+            totalCards: area.totalCards + flashcardsWithMeta.length,
+          };
+        });
+        
+        const areaWithTopic = updatedAreas[areaIdx];
+        const updatedTopic = areaWithTopic.topics.find(t => t.id === topicId);
+
+        if (selectedTopic?.id === topicId) setSelectedTopic(updatedTopic);
+        if (selectedStudyArea?.id === areaWithTopic.id) setSelectedStudyArea(areaWithTopic);
+        
+        // 👈 Armazena os dados atualizados para retornar depois
+        updatedData = { area: areaWithTopic, topic: updatedTopic };
+
+        return updatedAreas;
+      });
+
+      return updatedData; // 👈 MUDANÇA PRINCIPAL: Retorna os dados atualizados
+
+    } catch (err) {
+      console.error("Erro:", err);
+      alert("Não foi possível gerar os flashcards.");
+      return null; // 👈 Retorna nulo em caso de erro
+    }
+  };
+
+  // --- LÓGICA DE REPETIÇÃO ESPAÇADA (SRS) ---
+  const calculateSpacedRepetition = (card, quality) => {
+    // --- ✅ CHAVE DE TESTE (Modo Minutos vs. Modo Dias) ---
+    //
+    //   true  = os intervalos são em MINUTOS (para testar)
+    //   false = os intervalos são em DIAS (para o app real)
+    //
+    const IS_TEST_MODE = true; 
+    // ----------------------------------------------------
+
+    const EASE_FACTOR_DEFAULT = 2.5;
+    let easeFactor = card.easeFactor || EASE_FACTOR_DEFAULT;
+    let interval = card.interval || 0;
+    let repetitions = card.repetitions || 0;
+
+    // --- LÓGICA (PROPORÇÃO 1:2:4 APROVADA) ---
+    if (quality === 1) { // "Difícil"
+      repetitions = 0;
+      interval = IS_TEST_MODE ? 1 : 1; // 1 minuto ou 1 dia
+      easeFactor = Math.max(1.3, easeFactor - 0.2); 
+    
+    } else if (quality === 2) { // "Médio"
+      repetitions += 1;
+      if (repetitions === 1) {
+        interval = IS_TEST_MODE ? 2 : 2; // 2 minutos ou 2 dias
+      } else if (repetitions === 2) {
+        interval = IS_TEST_MODE ? 5 : 5; // 5 minutos ou 5 dias
+      } else {  
+        interval = Math.ceil(interval * easeFactor);
+      }
+
+    } else if (quality === 3) { // "Fácil"
+      repetitions += 1;
+      if (repetitions === 1) {
+        interval = IS_TEST_MODE ? 4 : 4; // 4 minutos ou 4 dias
+      } else if (repetitions === 2) {
+        interval = IS_TEST_MODE ? 10 : 10; // 10 minutos ou 10 dias
+      } else {
+        interval = Math.ceil(interval * easeFactor);
+      }
+      easeFactor += 0.15; 
+    }
+    // ---------------------------------------------
+
+    // Define a próxima data de revisão
+    const today = new Date();
+    const nextReviewDate = new Date(today);
+
+    if (IS_TEST_MODE) {
+      nextReviewDate.setMinutes(today.getMinutes() + interval);
+    } else {
+      nextReviewDate.setDate(today.getDate() + interval);
+    }
+
+    // Determina o novo status do card
+    const masteredThreshold = IS_TEST_MODE ? 60 : 30; // 60 minutos ou 30 dias
+    const newStatus = interval > masteredThreshold ? "mastered" : "learning";
+
+    return {
+      ...card,
+      easeFactor,
+      interval,
+      repetitions,
+      reviewDate: nextReviewDate.toISOString(),
+      status: newStatus,
+      lastReviewed: new Date().toISOString(),
+    };
+  };
+
   // --- VISTAS DA APLICAÇÃO ---
 
   if (studyMode && studyCards.length > 0) {
@@ -494,184 +748,207 @@ const calculateSpacedRepetition = (card, quality) => {
     );
   }
 
-if (currentView === "topic" && selectedTopic && selectedStudyArea) {
-  // calcula estatísticas simples
-  const total = selectedTopic.flashcards.length;
-  const novos = selectedTopic.flashcards.filter(c => c.status === "new").length;
-  const aprendendo = selectedTopic.flashcards.filter(c => c.status === "learning").length;
-  const revisar = selectedTopic.flashcards.filter(c => c.status === "review").length;
-  const dominados = selectedTopic.flashcards.filter(c => c.status === "mastered").length;
+  if (currentView === "topic" && selectedTopic && selectedStudyArea) {
+    // calcula estatísticas simples
+    const total = selectedTopic.flashcards.length;
+    const novos = selectedTopic.flashcards.filter(c => c.status === "new").length;
+    const aprendendo = selectedTopic.flashcards.filter(c => c.status === "learning").length;
+    const revisar = selectedTopic.flashcards.filter(c => c.status === "review").length;
+    const dominados = selectedTopic.flashcards.filter(c => c.status === "mastered").length;
 
-  return (
-    <div className="min-h-screen bg-background">
-      <Header onBackClick={handleBackToStudyArea} />
-      <main className="container mx-auto px-4 py-8 space-y-8">
-        
-        {/* Cabeçalho com breadcrumb */}
-        <div>
-          <p className="text-sm text-muted-foreground">
-            {selectedStudyArea.name} → {selectedTopic.name}
-          </p>
-          <h1 className="text-4xl font-bold font-heading text-primary">
-            {selectedTopic.name}
-          </h1>
-          <p className="text-muted-foreground">
-            {total} flashcards • {selectedStudyArea.name}
-          </p>
-        </div>
+    // --- ✅ CÁLCULO ATUALIZADO ---
+    const now = new Date();
+    // Calcula quantos cards "aprendendo" já estão vencidos
+    const learningDue = selectedTopic.flashcards.filter(
+        c => c.status === "learning" && new Date(c.reviewDate) <= now
+    ).length;
+    // O total para estudar é: Novos + Para Revisar + Aprendendo Vencidos
+    const cardsDueCount = novos + revisar + learningDue;
 
-        {/* Estatísticas */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="rounded-lg bg-card p-4 shadow-3d text-center">
-            <p className="text-sm text-muted-foreground">Novos</p>
-            <p className="text-2xl font-bold text-primary">{novos}</p>
+    return (
+      <div className="min-h-screen bg-background">
+        <Header onBackClick={handleBackToStudyArea} />
+        <main className="container mx-auto px-4 py-8 space-y-8">
+          
+          {/* Cabeçalho com breadcrumb */}
+          <div>
+            <p className="text-sm text-muted-foreground">
+              {selectedStudyArea.name} → {selectedTopic.name}
+            </p>
+            <h1 className="text-4xl font-bold font-heading text-primary">
+              {selectedTopic.name}
+            </h1>
+            <p className="text-muted-foreground">
+              {total} flashcards • {selectedStudyArea.name}
+            </p>
           </div>
-          <div className="rounded-lg bg-card p-4 shadow-3d text-center">
-            <p className="text-sm text-muted-foreground">Aprendendo</p>
-            <p className="text-2xl font-bold text-yellow-600">{aprendendo}</p>
-          </div>
-          <div className="rounded-lg bg-card p-4 shadow-3d text-center">
-            <p className="text-sm text-muted-foreground">Para Revisar</p>
-            <p className="text-2xl font-bold text-purple-600">{revisar}</p>
-          </div>
-          <div className="rounded-lg bg-card p-4 shadow-3d text-center">
-            <p className="text-sm text-muted-foreground">Dominados</p>
-            <p className="text-2xl font-bold text-green-600">{dominados}</p>
-          </div>
-        </div>
 
-        {/* Botões */}
-        <div className="flex gap-4">
-          <button
+          {/* Estatísticas */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="rounded-lg bg-card p-4 shadow-3d text-center">
+              <p className="text-sm text-muted-foreground">Novos</p>
+              <p className="text-2xl font-bold text-primary">{novos}</p>
+            </div>
+            <div className="rounded-lg bg-card p-4 shadow-3d text-center">
+              <p className="text-sm text-muted-foreground">Aprendendo</p>
+              <p className="text-2xl font-bold text-yellow-600">{aprendendo}</p>
+            </div>
+            <div className="rounded-lg bg-card p-4 shadow-3d text-center">
+              <p className="text-sm text-muted-foreground">Para Revisar</p>
+              <p className="text-2xl font-bold text-purple-600">{revisar}</p>
+            </div>
+            <div className="rounded-lg bg-card p-4 shadow-3d text-center">
+              <p className="text-sm text-muted-foreground">Dominados</p>
+              <p className="text-2xl font-bold text-green-600">{dominados}</p>
+            </div>
+          </div>
+
+          {/* Botões */}
+          <div className="flex gap-4">
+            <button
             onClick={startStudyMode}
-            disabled={total === 0}
+            disabled={cardsDueCount === 0} // <-- MUDANÇA AQUI
             className="flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-white font-semibold shadow-3d disabled:bg-gray-400"
           >
             <Brain className="h-5 w-5" /> Iniciar Estudo
-            {total > 0 && (
-              <span className="ml-2 text-sm font-medium">{total} cards</span>
+            {cardsDueCount > 0 && ( // <-- MUDANÇA AQUI
+              <span className="ml-2 text-sm font-medium">{cardsDueCount} cards</span> // <-- MUDANÇA AQUI
             )}
           </button>
-          <button className="rounded-lg border border-border px-6 py-3 font-semibold shadow-sm hover:bg-muted">
-            Ver Estatísticas
-          </button>
-        </div>
+            <button className="rounded-lg border border-border px-6 py-3 font-semibold shadow-sm hover:bg-muted">
+              Ver Estatísticas
+            </button>
+          </div>
 
-        {/* Lista de Flashcards */}
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold mb-4">Flashcards</h2>
+          {/* Lista de Flashcards */}
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold mb-4">Flashcards</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {selectedTopic.flashcards.map((card) => (
-              <div
-                key={card.id}
-                className="rounded-lg border border-border bg-card p-4 shadow-sm hover:shadow-md transition cursor-pointer"
-              >
-                {/* Badges de status e dificuldade */}
-                <div className="mb-2 flex gap-2">
-                  <span className="px-2 py-0.5 rounded-md bg-yellow-100 text-yellow-700 text-xs font-semibold">
-                    {card.status || "novo"}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 text-xs">
-                    {card.difficulty || "médio"}
-                  </span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {selectedTopic.flashcards.map((card) => (
+                <div
+                  key={card.id}
+                  // 👇 1. ADICIONE 'relative' AQUI
+                  className="relative rounded-lg border border-border bg-card p-4 shadow-sm hover:shadow-md transition cursor-pointer"
+                >
+                  {/* 👇 2. ADICIONE ESTE BOTÃO DE EXCLUIR */}
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation(); // Impede que o clique afete o card pai
+                      // 👇 CORREÇÃO: Passa o ID da Área, do Tópico e do Card
+                      handleDeleteCard(selectedStudyArea.id, selectedTopic.id, card.id);
+                      }}
+                      className="absolute top-2 right-2 p-1 rounded-full text-muted-foreground hover:bg-red-100 hover:text-red-600 transition-colors z-10"
+                      aria-label="Excluir card"
+                  >
+                      <X className="h-4 w-4" />
+                  </button>
+                   
+                  {/* Badges de status e dificuldade */}
+                  <div className="mb-2 flex gap-2">
+                    <span className="px-2 py-0.5 rounded-md bg-yellow-100 text-yellow-700 text-xs font-semibold">
+                      {card.status || "novo"}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 text-xs">
+                      {card.difficulty || "médio"}
+                    </span>
+                  </div>
+
+                  {/* Só mostra a pergunta */}
+                  <p className="font-semibold text-primary mb-1">Pergunta:</p>
+                  <p className="text-muted-foreground">{card.question}</p>
                 </div>
+              ))}
 
-                {/* Só mostra a pergunta */}
-                <p className="font-semibold text-primary mb-1">Pergunta:</p>
-                <p className="text-muted-foreground">{card.question}</p>
+              {/* Botão adicionar */}
+              <div
+                onClick={() => setIsNewFlashcardModalOpen(true)}
+                className="flex h-32 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 hover:bg-muted/30 transition"
+              >
+                <Plus className="h-6 w-6 text-muted-foreground mb-2" />
+                <span className="font-semibold text-muted-foreground text-sm">
+                  Adicionar Novo Flashcard
+                </span>
               </div>
-            ))}
-
-            {/* Botão adicionar */}
-            <div
-              onClick={() => setIsNewFlashcardModalOpen(true)}
-              className="flex h-32 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 hover:bg-muted/30 transition"
-            >
-              <Plus className="h-6 w-6 text-muted-foreground mb-2" />
-              <span className="font-semibold text-muted-foreground text-sm">
-                Adicionar Novo Flashcard
-              </span>
             </div>
           </div>
-        </div>
-      </main>
+        </main>
 
-      {/* Modal Novo Flashcard */}
-{/* Modal Novo Flashcard */}
-{isNewFlashcardModalOpen && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-    <div className="w-full max-w-xl rounded-2xl bg-card p-6 shadow-xl">
-      
-      {/* Header modal */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold text-primary">Gerar Flashcards com IA</h2>
-        <button
-          onClick={() => setIsNewFlashcardModalOpen(false)}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          ✕
-        </button>
+        {/* Modal Novo Flashcard */}
+        {isNewFlashcardModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="w-full max-w-xl rounded-2xl bg-card p-6 shadow-xl">
+              
+              {/* Header modal */}
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-primary">Gerar Flashcards com IA</h2>
+                <button
+                  onClick={() => setIsNewFlashcardModalOpen(false)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Formulário IA */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Descrição para a IA *</label>
+                  <textarea
+                    id="ia-description"
+                    value={iaDescription}
+                    onChange={(e) => setIaDescription(e.target.value)}
+                    placeholder="Descreva o conteúdo para virar flashcards..."
+                    className="flex min-h-[80px] w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Quanto mais detalhes você fornecer, melhores serão os flashcards gerados.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Número de Flashcards</label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    value={numFlashcards}
+                    onChange={(e) => setNumFlashcards(Number(e.target.value))}
+                    className="w-full"
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">{numFlashcards} cards</p>
+                </div>
+              </div>
+
+              {/* Ações */}
+              <div className="flex justify-end gap-2 mt-6">
+                <button
+                  onClick={() => setIsNewFlashcardModalOpen(false)}
+                  className="px-4 py-2 rounded-lg border bg-muted text-muted-foreground hover:bg-muted/70"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    // 🔹 Aqui você chama a função que envia `iaDescription` para a API/IA
+                    // e adiciona os flashcards retornados em `selectedTopic.flashcards`.
+                    generateFlashcardsWithAI(iaDescription, numFlashcards, selectedTopic.id);
+                    setIsNewFlashcardModalOpen(false);
+                  }}
+                  className="px-4 py-2 rounded-lg border bg-primary text-primary-foreground hover:opacity-90"
+                >
+                  Gerar Flashcards
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-
-      {/* Formulário IA */}
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Descrição para a IA *</label>
-<textarea
-  id="ia-description"
-  value={iaDescription}
-  onChange={(e) => setIaDescription(e.target.value)}
-  placeholder="Descreva o conteúdo para virar flashcards..."
-  className="flex min-h-[80px] w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-/>
-          <p className="text-xs text-muted-foreground mt-1">
-            Quanto mais detalhes você fornecer, melhores serão os flashcards gerados.
-          </p>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">Número de Flashcards</label>
-          <input
-            type="range"
-            min="1"
-            max="10"
-            value={numFlashcards}
-            onChange={(e) => setNumFlashcards(Number(e.target.value))}
-            className="w-full"
-          />
-          <p className="text-sm text-muted-foreground mt-1">{numFlashcards} cards</p>
-        </div>
-      </div>
-
-      {/* Ações */}
-      <div className="flex justify-end gap-2 mt-6">
-        <button
-          onClick={() => setIsNewFlashcardModalOpen(false)}
-          className="px-4 py-2 rounded-lg border bg-muted text-muted-foreground hover:bg-muted/70"
-        >
-          Cancelar
-        </button>
-        <button
-          onClick={() => {
-            // 🔹 Aqui você chama a função que envia `iaDescription` para a API/IA
-            // e adiciona os flashcards retornados em `selectedTopic.flashcards`.
-            generateFlashcardsWithAI(iaDescription, numFlashcards, selectedTopic.id);
-            setIsNewFlashcardModalOpen(false);
-          }}
-          className="px-4 py-2 rounded-lg border bg-primary text-primary-foreground hover:opacity-90"
-        >
-          Gerar Flashcards
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-    </div>
-  );
-}
+    );
+  }
 
   if (currentView === "study-area" && selectedStudyArea) {
+    
     return (
       <div className="min-h-screen bg-background">
         <Header onBackClick={handleBackToDashboard} />
@@ -687,33 +964,45 @@ if (currentView === "topic" && selectedTopic && selectedStudyArea) {
           </div>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {selectedStudyArea.topics.map((topic) => {
-              const progress = topic.status === 'completed' ? 100 : topic.status === 'active' ? 60 : 85;
-              return (
-                <div key={topic.id} className="cursor-pointer rounded-2xl border border-border bg-card p-6 shadow-3d transition-all duration-300 hover:shadow-3d-hover space-y-4">
-                  <div onClick={() => handleTopicClick(topic)} className="flex items-center justify-between">
-                    <span className={`${selectedStudyArea.textColor} font-heading font-bold text-xl`}>{topic.name}</span>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div onClick={() => handleTopicClick(topic)}>
-                    <div className="flex justify-between items-center text-sm text-muted-foreground mb-1">
-                      <span>Flashcards</span>
-                      <TopicBadge topic={topic} />
-                    </div>
-                    <div className="flex justify-between text-sm text-muted-foreground mb-1">
-                      <span>Progresso</span>
-                      <span>{progress}%</span>
-                    </div>
-                    <div className="h-2 w-full rounded-full bg-muted"><div className="h-2 rounded-full bg-primary" style={{ width: `${progress}%` }}></div></div>
-                  </div>
-                  <button
-                    onClick={() => handleTopicClick(topic)}
-                    className={`w-full rounded-lg border py-2 font-medium shadow-sm transition ${selectedStudyArea.buttonColor} ${selectedStudyArea.hoverButtonColor}`}
-                  >
-                    {topic.status === "completed" ? "Revisar" : "Estudar"}
-                  </button>
-                </div>
-              )
-            })}
+              // --- CÁLCULO DINÂMICO DO PROGRESSO ---
+  const totalCards = topic.cardCount;
+  const dominados = topic.flashcards.filter(c => c.status === 'mastered').length;
+  
+  // Evita divisão por zero se não houver cards
+  const progress = totalCards > 0 ? Math.round((dominados / totalCards) * 100) : 0;
+  // --- FIM DA CORREÇÃO ---
+
+  return (
+    <div key={topic.id} className="cursor-pointer rounded-2xl border border-border bg-card p-6 shadow-3d transition-all duration-300 hover:shadow-3d-hover space-y-4">
+      <div onClick={() => handleTopicClick(topic)} className="flex items-center justify-between">
+        <span className={`${selectedStudyArea.textColor} font-heading font-bold text-xl`}>{topic.name}</span>
+        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+      </div>
+      <div onClick={() => handleTopicClick(topic)}>
+        <div className="flex justify-between items-center text-sm text-muted-foreground mb-1">
+          <span>Flashcards</span>
+          <TopicBadge topic={topic} />
+        </div>
+        <div className="flex justify-between text-sm text-muted-foreground mb-1">
+          <span>Progresso</span>
+          {/* Mostra o progresso dinâmico */}
+          <span>{progress}%</span>
+        </div>
+        <div className="h-2 w-full rounded-full bg-muted">
+          {/* Usa o progresso dinâmico no 'style' */}
+          <div className="h-2 rounded-full bg-primary" style={{ width: `${progress}%` }}></div>
+        </div>
+      </div>
+      <button
+        onClick={() => handleTopicClick(topic)}
+        className={`w-full rounded-lg border py-2 font-medium shadow-sm transition ${selectedStudyArea.buttonColor} ${selectedStudyArea.hoverButtonColor}`}
+      >
+        {/* Lógica do botão (pode manter) */}
+        {progress === 100 ? "Revisar" : "Estudar"}
+      </button>
+    </div>
+  )
+})}
             {/* BOTÃO CORRIGIDO */}
             <div
               onClick={openNewTopicModal}
@@ -759,6 +1048,42 @@ if (currentView === "topic" && selectedTopic && selectedStudyArea) {
       </div>
     );
   }
+const now = new Date();
+  let totalCardCount = 0;
+  let totalMasteredCount = 0;
+  let totalDueCount = 0;
+
+  studyAreas.forEach(area => {
+    // 1. Soma o total de cards da área (já está pré-calculado)
+    totalCardCount += area.totalCards; 
+
+    area.topics.forEach(topic => {
+      topic.flashcards.forEach(card => {
+        // 2. Conta os cards dominados (mastered)
+        if (card.status === 'mastered') {
+          totalMasteredCount++;
+        }
+
+        // 3. Conta os cards para revisão (Novos, Para Revisar, ou Aprendendo Vencidos)
+        if (card.status === 'new' || card.status === 'review') {
+          totalDueCount++;
+        } else if (card.status === 'learning' && card.reviewDate && new Date(card.reviewDate) <= now) {
+          totalDueCount++;
+        }
+      });
+    });
+  });
+
+  // 4. Calcula o progresso geral
+  const overallProgress = totalCardCount > 0 
+    ? Math.round((totalMasteredCount / totalCardCount) * 100) 
+    : 0;
+  
+  // NOTA: "Sequência" e "+X esta semana" são placeholders.
+  // O seu estado 'studyAreas' não armazena o histórico necessário para calcular isso.
+  // Vamos manter os valores da imagem por enquanto para não quebrar o layout.
+  const studyStreak = 15;
+  const newThisWeek = 12;
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -769,11 +1094,65 @@ if (currentView === "topic" && selectedTopic && selectedStudyArea) {
         </section>
 
         <section className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+        
+        {/* Total de Cards (Dinâmico) */}
+        <div className="rounded-lg border border-border bg-card p-6 shadow-3d">
+          <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <h3 className="text-sm font-medium text-muted-foreground">Total de Cards</h3>
+            <BookOpen className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <div className="text-3xl font-bold text-primary font-heading">{totalCardCount}</div>
+            <p className="mt-1 text-xs text-muted-foreground">+{newThisWeek} esta semana</p>
+          </div>
+        </div>
+
+        {/* Progresso Geral (Dinâmico) */}
+        <div className="rounded-lg border border-border bg-card p-6 shadow-3d">
+          <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <h3 className="text-sm font-medium text-muted-foreground">Progresso Geral</h3>
+            <Target className="h-5 w-5 text-secondary" />
+          </div>
+          <div>
+            <div className="text-3xl font-bold text-cyan-700 font-heading">{overallProgress}%</div>
+            <div className="mt-2 h-2 w-full rounded-full bg-muted">
+              <div className="h-2 rounded-full bg-secondary" style={{ width: `${overallProgress}%` }}></div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Sequência de Estudos (Placeholder) */}
+        <div className="rounded-lg border border-border bg-card p-6 shadow-3d">
+          <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <h3 className="text-sm font-medium text-muted-foreground">Sequência de Estudos</h3>
+            <Zap className="h-5 w-5 text-accent" />
+          </div>
+          <div>
+            <div className="text-3xl font-bold text-accent-foreground font-heading">{studyStreak}</div>
+            <p className="mt-1 text-xs text-muted-foreground">dias consecutivos 🔥</p>
+          </div>
+        </div>
+        
+        {/* Próxima Revisão (Dinâmico) */}
+        <div className="rounded-lg border border-border bg-card p-6 shadow-3d">
+          <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <h3 className="text-sm font-medium text-muted-foreground">Próxima Revisão</h3>
+            <Clock className="h-5 w-5 text-purple-500" />
+          </div>
+          <div>
+            <div className="text-3xl font-bold text-purple-600 font-heading">{totalDueCount}</div>
+            <p className="mt-1 text-xs text-muted-foreground">cards aguardando</p>
+          </div>
+        </div>
+        
+      </section>
+
+      {/*  <section className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-lg border border-border bg-card p-6 shadow-3d"><div className="flex flex-row items-center justify-between space-y-0 pb-2"><h3 className="text-sm font-medium text-muted-foreground">Total de Cards</h3><BookOpen className="h-5 w-5 text-primary" /></div><div><div className="text-3xl font-bold text-primary font-heading">247</div><p className="mt-1 text-xs text-muted-foreground">+12 esta semana</p></div></div>
           <div className="rounded-lg border border-border bg-card p-6 shadow-3d"><div className="flex flex-row items-center justify-between space-y-0 pb-2"><h3 className="text-sm font-medium text-muted-foreground">Progresso Semanal</h3><Target className="h-5 w-5 text-secondary" /></div><div><div className="text-3xl font-bold text-cyan-700 font-heading">78%</div><div className="mt-2 h-2 w-full rounded-full bg-muted"><div className="h-2 rounded-full bg-secondary" style={{ width: '78%' }}></div></div></div></div>
           <div className="rounded-lg border border-border bg-card p-6 shadow-3d"><div className="flex flex-row items-center justify-between space-y-0 pb-2"><h3 className="text-sm font-medium text-muted-foreground">Sequência de Estudos</h3><Zap className="h-5 w-5 text-accent" /></div><div><div className="text-3xl font-bold text-accent-foreground font-heading">15</div><p className="mt-1 text-xs text-muted-foreground">dias consecutivos 🔥</p></div></div>
           <div className="rounded-lg border border-border bg-card p-6 shadow-3d"><div className="flex flex-row items-center justify-between space-y-0 pb-2"><h3 className="text-sm font-medium text-muted-foreground">Próxima Revisão</h3><Clock className="h-5 w-5 text-purple-500" /></div><div><div className="text-3xl font-bold text-purple-600 font-heading">23</div><p className="mt-1 text-xs text-muted-foreground">cards aguardando</p></div></div>
-        </section>
+        </section> */}
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
@@ -790,128 +1169,113 @@ if (currentView === "topic" && selectedTopic && selectedStudyArea) {
               </div>
 
               {/* FORMULÁRIO (CÓDIGO NOVO) */}
-<form
-  className="space-y-6"
-  onSubmit={async (e) => { // 👈 Adicione 'async' aqui
-    e.preventDefault();
-    if (!selectedAreaId || !selectedTopicId || !iaDescription) {
-      alert("Preencha área, tópico e descrição!");
-      return;
-    }
-    
-    // ✅ Chama a função para gerar e ESPERA ela terminar
-    await generateFlashcardsWithAI(iaDescription, flashcardCount, selectedTopicId);
-    
-    // ✅ Após gerar, encontra a área e o tópico atualizados
-    const updatedArea = studyAreas.find(area => area.id === selectedAreaId);
-    const updatedTopic = updatedArea?.topics.find(topic => topic.id === selectedTopicId);
-
-    // ✅ Navega para a tela do tópico para mostrar os novos cards!
-    if (updatedTopic) {
-      handleTopicClick(updatedTopic);
-    }
-    
-    setIaDescription(""); // limpa textarea depois de gerar
-  }}
->              
-{/*  Código anterior apresentando erro para gerar os flashcards            
-<form
-  className="space-y-6"
-  onSubmit={(e) => {
-    e.preventDefault();
-    if (!selectedAreaId || !selectedTopicId || !iaDescription) {
-      alert("Preencha área, tópico e descrição!");
-      return;
-    }
-    generateFlashcardsWithAI(iaDescription, flashcardCount, selectedTopicId);
-    setIaDescription(""); // limpa textarea depois de gerar
-  }}
->
-*/}
+              <form
+                className="space-y-6"
+                onSubmit={async (e) => { 
+                  e.preventDefault();
+                  if (!selectedAreaId || !selectedTopicId || !iaDescription) {
+                    alert("Preencha área, tópico e descrição!");
+                    return;
+                  }
+                  
+                  // ✅ 1. Chama a função e ARMAZENA o retorno dela
+                  const updatedData = await generateFlashcardsWithAI(iaDescription, flashcardCount, selectedTopicId);
+                  
+                  // ✅ 2. Limpa o formulário
+                  setIaDescription(""); 
+                  
+                  // ✅ 3. Usa os dados de retorno (que estão 100% corretos) para navegar
+                  if (updatedData && updatedData.topic) {
+                    // A própria função 'generateFlashcardsWithAI' já atualizou o estado global,
+                    // aqui só precisamos navegar para a tela certa.
+                    handleTopicClick(updatedData.topic);
+                  }
+                }}
+              > 
                 <div className="space-y-2">
-  <label htmlFor="study-area" className="text-sm font-medium text-foreground">Área de Estudo *</label>
-  <select
-    id="study-area"
-    value={selectedAreaId}
-    onChange={(e) => {
-      setSelectedAreaId(e.target.value);
-      setSelectedTopicId(""); // reseta quando mudar área
-    }}
-    className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-  >
-    <option value="">Selecione a área de estudo</option>
-    {studyAreas.map(area => (
-      <option key={area.id} value={area.id}>{area.name}</option>
-    ))}
-  </select>
-  <p className="text-xs text-muted-foreground">Escolha em qual matéria os flashcards serão organizados.</p>
-</div>
+                  <label htmlFor="study-area" className="text-sm font-medium text-foreground">Área de Estudo *</label>
+                  <select
+                    id="study-area"
+                    value={selectedAreaId}
+                    onChange={(e) => {
+                      setSelectedAreaId(e.target.value);
+                      setSelectedTopicId(""); // reseta quando mudar área
+                    }}
+                    className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="">Selecione a área de estudo</option>
+                    {studyAreas.map(area => (
+                      <option key={area.id} value={area.id}>{area.name}</option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted-foreground">Escolha em qual matéria os flashcards serão organizados.</p>
+                </div>
 
-{/* TÓPICO ESPECÍFICO */}
-<div className="space-y-2">
-  <label htmlFor="specific-topic" className="text-sm font-medium text-foreground">Tópico Específico *</label>
+                {/* TÓPICO ESPECÍFICO */}
+                <div className="space-y-2">
+                  <label htmlFor="specific-topic" className="text-sm font-medium text-foreground">Tópico Específico *</label>
 
-  {selectedAreaId && studyAreas.find(area => area.id === selectedAreaId)?.topics.length > 0 ? (
-    <select
-      id="specific-topic"
-      value={selectedTopicId}
-      onChange={(e) => setSelectedTopicId(e.target.value)}
-      className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-    >
-      <option value="">Selecione um tópico existente</option>
-      {studyAreas.find(area => area.id === selectedAreaId).topics.map(topic => (
-        <option key={topic.id} value={topic.id}>{topic.name}</option>
-      ))}
-    </select>
-  ) : (
-    <input
-      type="text"
-      id="specific-topic"
-      placeholder="Digite um novo tópico..."
-      className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-    />
-  )}
+                  {selectedAreaId && studyAreas.find(area => area.id === selectedAreaId)?.topics.length > 0 ? (
+                    <select
+                      id="specific-topic"
+                      value={selectedTopicId}
+                      onChange={(e) => setSelectedTopicId(e.target.value)}
+                      className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      <option value="">Selecione um tópico existente</option>
+                      {studyAreas.find(area => area.id === selectedAreaId).topics.map(topic => (
+                        <option key={topic.id} value={topic.id}>{topic.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      id="specific-topic"
+                      placeholder="Digite um novo tópico..."
+                      className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  )}
 
-  <p className="text-xs text-muted-foreground">Escolha um tópico existente ou digite um novo.</p>
-</div>
+                  <p className="text-xs text-muted-foreground">Escolha um tópico existente ou digite um novo.</p>
+                </div>
 
-{/* DESCRIÇÃO PARA A IA */}
-<div className="space-y-2">
-  <label htmlFor="ia-description" className="text-sm font-medium text-foreground">Descrição para a IA *</label>
-  <textarea
-  id="ia-description"
-  placeholder="Ex: Detalhar os principais eventos que levaram à Independência do Brasil..."
-  className="flex min-h-[80px] w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-  value={iaDescription}
-  onChange={(e) => setIaDescription(e.target.value)}
-/>
-  <p className="text-xs text-muted-foreground">Cole aqui seu material de estudo. Quanto mais detalhes, melhores serão os flashcards.</p>
-</div>
+                {/* DESCRIÇÃO PARA A IA */}
+                <div className="space-y-2">
+                  <label htmlFor="ia-description" className="text-sm font-medium text-foreground">Descrição para a IA *</label>
+                  <textarea
+                    id="ia-description"
+                    placeholder="Ex: Detalhar os principais eventos que levaram à Independência do Brasil..."
+                    className="flex min-h-[80px] w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    value={iaDescription}
+                    onChange={(e) => setIaDescription(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">Cole aqui seu material de estudo. Quanto mais detalhes, melhores serão os flashcards.</p>
+                </div>
                 <button type="submit" className="flex w-full h-12 items-center justify-center gap-2 rounded-lg bg-primary text-lg font-semibold text-primary-foreground shadow-3d transition-all duration-300 hover:shadow-3d-hover">
                   <Brain className="h-5 w-5" />
                   Gerar Flashcards
                 </button>
               </form>
               <div className="space-y-2">
-  <label htmlFor="flashcard-count" className="text-sm font-medium text-foreground">Número de Flashcards:</label>
-  
-  <div className="flex items-center space-x-4">
-    <span className="text-sm text-muted-foreground">1</span>
-    <input
-      type="range"
-      id="flashcard-count"
-      min="1"
-      max="10"
-      value={flashcardCount}
-      onChange={(e) => setFlashcardCount(Number(e.target.value))}
-      className="flex-1"
-    />
-    <span className="text-sm text-muted-foreground">10</span>
-    <span className="px-2 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium">
-      {flashcardCount} cards
-    </span>
-  </div>
-</div>
+                <label htmlFor="flashcard-count" className="text-sm font-medium text-foreground">Número de Flashcards:</label>
+                
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm text-muted-foreground">1</span>
+                  <input
+                    type="range"
+                    id="flashcard-count"
+                    min="1"
+                    max="10"
+                    value={flashcardCount}
+                    onChange={(e) => setFlashcardCount(Number(e.target.value))}
+                    className="flex-1"
+                  />
+                  <span className="text-sm text-muted-foreground">10</span>
+                  <span className="px-2 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium">
+                    {flashcardCount} cards
+                  </span>
+                </div>
+              </div>
 
               {/* CAIXA IA INTELIGENTE E BOTÕES (CÓDIGO NOVO) */}
               <div className="rounded-xl border border-accent/20 bg-gradient-to-r from-accent/10 to-secondary/10 p-4">
