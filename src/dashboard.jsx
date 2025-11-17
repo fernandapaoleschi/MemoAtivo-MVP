@@ -233,6 +233,7 @@ export default function MemoAtivoDashboard() {
   const [isNewFlashcardModalOpen, setIsNewFlashcardModalOpen] = useState(false);
   const [iaDescription, setIaDescription] = useState("");
   const [numFlashcards, setNumFlashcards] = useState(5);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   // 3. USE EFFECT PARA CARREGAR OS DADOS (APENAS UMA VEZ)
   useEffect(() => {
@@ -254,7 +255,19 @@ export default function MemoAtivoDashboard() {
     if (!isLoading) {
       localStorage.setItem("memoAtivoStudyAreas", JSON.stringify(studyAreas));
     }
-  }, [studyAreas, isLoading]); // Roda sempre que 'studyAreas' ou 'isLoading' mudar. 
+  }, [studyAreas, isLoading]); // Roda sempre que 'studyAreas' ou 'isLoading' mudar.
+  useEffect(() => {
+    // Se o toast aparecer...
+    if (showSuccessToast) {
+      // Cria um "alarme" (timer) para escondê-lo depois de 3 segundos
+      const timer = setTimeout(() => {
+        setShowSuccessToast(false);
+      }, 3000); // 3000ms = 3 segundos
+
+      // Limpa o alarme se o componente for fechado
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessToast]); // Este efeito só roda quando [showSuccessToast] mudar 
 
   // --- LÓGICA DE NAVEGAÇÃO ---
   const handleStudyAreaClick = (studyArea) => { setSelectedStudyArea(studyArea); setCurrentView("study-area"); };
@@ -566,7 +579,7 @@ const handleDeleteCard = (areaId, topicId, cardIdToDelete) => {
       </span>
     );
   };
-  const generateFlashcardsWithAI = async (description, count, topicId) => {
+ const generateFlashcardsWithAI = async (description, count) => {
     try {
       const res = await fetch("http://localhost:5000/api/generate-flashcards", {
         method: "POST",
@@ -574,9 +587,15 @@ const handleDeleteCard = (areaId, topicId, cardIdToDelete) => {
         body: JSON.stringify({ description, count }),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erro ao gerar flashcards");
+      if (!res.ok) {
+        // Se a resposta não for OK, lê a mensagem de erro do backend
+        const errorData = await res.json().catch(() => ({ error: "Erro desconhecido ao ler a resposta" })); 
+        throw new Error(errorData.error || `Erro no servidor: ${res.status}`);
+      }
 
+      const data = await res.json();
+
+      // Apenas formata e retorna os NOVOS cards
       const flashcardsWithMeta = data.result.map((fc, i) => ({
         id: Date.now() + i,
         question: fc.question,
@@ -585,59 +604,14 @@ const handleDeleteCard = (areaId, topicId, cardIdToDelete) => {
         difficulty: "médio",
       }));
 
-      let updatedData = {}; // 👈 Adicionado para guardar os dados novos
-
-      setStudyAreas((prev) => {
-        const areaIdx = prev.findIndex(a => a.topics.some(t => t.id === topicId));
-        if (areaIdx === -1) return prev;
-              
-        const updatedAreas = prev.map((area, idx) => {
-          // Se não for a área de estudo certa, apenas retorna a área
-          if (idx !== areaIdx) return area;
-
-          // É a área de estudo certa.
-          // 1. Atualiza os tópicos
-          const updatedTopics = area.topics.map(t =>
-            t.id === topicId
-              ? {
-                  ...t,
-                  flashcards: [...(t.flashcards || []), ...flashcardsWithMeta],
-                  // ✅ BUG 1 CORRIGIDO: Usa t.cardCount (o número) em vez de t.flashcards.length (o array)
-                  cardCount: t.cardCount + flashcardsWithMeta.length, 
-                }
-              : t
-          );
-
-          // 2. Retorna a área atualizada, somando os novos cards ao total
-          return {
-            ...area,
-            topics: updatedTopics,
-            // ✅ BUG 2 CORRIGIDO: Soma os novos cards ao totalCards da área
-            totalCards: area.totalCards + flashcardsWithMeta.length,
-          };
-        });
-        
-        const areaWithTopic = updatedAreas[areaIdx];
-        const updatedTopic = areaWithTopic.topics.find(t => t.id === topicId);
-
-        if (selectedTopic?.id === topicId) setSelectedTopic(updatedTopic);
-        if (selectedStudyArea?.id === areaWithTopic.id) setSelectedStudyArea(areaWithTopic);
-        
-        // 👈 Armazena os dados atualizados para retornar depois
-        updatedData = { area: areaWithTopic, topic: updatedTopic };
-
-        return updatedAreas;
-      });
-
-      return updatedData; // 👈 MUDANÇA PRINCIPAL: Retorna os dados atualizados
+      return flashcardsWithMeta; // <-- RETORNA APENAS OS CARDS NOVOS
 
     } catch (err) {
-      console.error("Erro:", err);
-      alert("Não foi possível gerar os flashcards.");
-      return null; // 👈 Retorna nulo em caso de erro
+      console.error("Erro na chamada da IA:", err);
+      alert(`Não foi possível gerar os flashcards: ${err.message}`);
+      return null; // Retorna null em caso de erro
     }
   };
-
   // --- LÓGICA DE REPETIÇÃO ESPAÇADA (SRS) ---
   const calculateSpacedRepetition = (card, quality) => {
     // --- ✅ CHAVE DE TESTE (Modo Minutos vs. Modo Dias) ---
@@ -713,6 +687,11 @@ const handleDeleteCard = (areaId, topicId, cardIdToDelete) => {
     const currentCard = studyCards[currentCardIndex];
     return (
       <div className="min-h-screen bg-background">
+        {showSuccessToast && (
+  <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100] p-4 rounded-lg bg-green-600 text-white shadow-lg animate-pulse">
+    <span className="font-bold">🎉 Flashcards gerados com sucesso!</span>
+  </div>
+)}
         <Header onBackClick={exitStudyMode} />
         <main className="container mx-auto px-4 py-8">
           <div className="mb-8">
@@ -767,6 +746,11 @@ const handleDeleteCard = (areaId, topicId, cardIdToDelete) => {
 
     return (
       <div className="min-h-screen bg-background">
+        {showSuccessToast && (
+  <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100] p-4 rounded-lg bg-green-600 text-white shadow-lg animate-pulse">
+    <span className="font-bold">🎉 Flashcards gerados com sucesso!</span>
+  </div>
+)}
         <Header onBackClick={handleBackToStudyArea} />
         <main className="container mx-auto px-4 py-8 space-y-8">
           
@@ -929,16 +913,22 @@ const handleDeleteCard = (areaId, topicId, cardIdToDelete) => {
                   Cancelar
                 </button>
                 <button
-                  onClick={() => {
-                    // 🔹 Aqui você chama a função que envia `iaDescription` para a API/IA
-                    // e adiciona os flashcards retornados em `selectedTopic.flashcards`.
-                    generateFlashcardsWithAI(iaDescription, numFlashcards, selectedTopic.id);
-                    setIsNewFlashcardModalOpen(false);
-                  }}
-                  className="px-4 py-2 rounded-lg border bg-primary text-primary-foreground hover:opacity-90"
-                >
-                  Gerar Flashcards
-                </button>
+            onClick={async () => { // 👈 1. Adicione "async"
+              // 2. Espere a IA terminar
+              const result = await generateFlashcardsWithAI(iaDescription, numFlashcards, selectedTopic.id);
+              
+              // 3. Feche o modal
+              setIsNewFlashcardModalOpen(false);
+
+              // 4. Se deu certo (result não é nulo), mostre o pop-up
+              if (result) {
+                setShowSuccessToast(true); // 👈 ATIVA O POP-UP
+              }
+            }}
+            className="px-4 py-2 rounded-lg border bg-primary text-primary-foreground hover:opacity-90"
+          >
+            Gerar Flashcards
+          </button>
               </div>
             </div>
           </div>
@@ -951,6 +941,11 @@ const handleDeleteCard = (areaId, topicId, cardIdToDelete) => {
     
     return (
       <div className="min-h-screen bg-background">
+        {showSuccessToast && (
+  <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100] p-4 rounded-lg bg-green-600 text-white shadow-lg animate-pulse">
+    <span className="font-bold">🎉 Flashcards gerados com sucesso!</span>
+  </div>
+)}
         <Header onBackClick={handleBackToDashboard} />
         <main className="container mx-auto px-4 py-8">
           <div className="mb-8 flex items-center gap-4">
@@ -1086,6 +1081,11 @@ const now = new Date();
   const newThisWeek = 12;
   return (
     <div className="min-h-screen bg-background">
+      {showSuccessToast && (
+  <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100] p-4 rounded-lg bg-green-600 text-white shadow-lg animate-pulse">
+    <span className="font-bold">🎉 Flashcards gerados com sucesso!</span>
+  </div>
+)}
       <Header />
       <main className="container mx-auto space-y-8 px-4 py-8">
         <section className="text-center space-y-4">
@@ -1172,25 +1172,71 @@ const now = new Date();
               <form
                 className="space-y-6"
                 onSubmit={async (e) => { 
-                  e.preventDefault();
-                  if (!selectedAreaId || !selectedTopicId || !iaDescription) {
-                    alert("Preencha área, tópico e descrição!");
-                    return;
-                  }
+              e.preventDefault();
+              
+              if (!selectedAreaId || !selectedTopicId || !iaDescription) {
+                alert("Preencha área, tópico e descrição!");
+                return;
+              }
+              
+              // 1. CHAMA A IA e espera os novos cards
+              //    (passa apenas 'description' e 'count', não mais o topicId)
+              const newFlashcards = await generateFlashcardsWithAI(iaDescription, flashcardCount);
+              
+              // 2. VERIFICA SE DEU ERRO (se a IA retornou null)
+              if (newFlashcards === null) {
+                // O 'alert' de erro já foi dado dentro da função da IA
+                return; 
+              }
+
+              // 3. SUCESSO! ATUALIZA O ESTADO (a lógica foi movida para cá)
+              let updatedTopic = null;
+              let updatedArea = null;
+
+              setStudyAreas((prevAreas) => {
+                const areaIdx = prevAreas.findIndex(a => a.topics.some(t => t.id === selectedTopicId));
+                if (areaIdx === -1) return prevAreas; // Segurança
+
+                const newStudyAreas = prevAreas.map((area, idx) => {
+                  if (idx !== areaIdx) return area;
+
+                  // Encontra e atualiza o tópico correto
+                  const updatedTopics = area.topics.map(t => {
+                    if (t.id !== selectedTopicId) return t;
+                    
+                    // Este é o tópico!
+                    updatedTopic = {
+                        ...t,
+                        flashcards: [...(t.flashcards || []), ...newFlashcards],
+                        cardCount: t.cardCount + newFlashcards.length, 
+                    };
+                    return updatedTopic;
+                  });
                   
-                  // ✅ 1. Chama a função e ARMAZENA o retorno dela
-                  const updatedData = await generateFlashcardsWithAI(iaDescription, flashcardCount, selectedTopicId);
-                  
-                  // ✅ 2. Limpa o formulário
-                  setIaDescription(""); 
-                  
-                  // ✅ 3. Usa os dados de retorno (que estão 100% corretos) para navegar
-                  if (updatedData && updatedData.topic) {
-                    // A própria função 'generateFlashcardsWithAI' já atualizou o estado global,
-                    // aqui só precisamos navegar para a tela certa.
-                    handleTopicClick(updatedData.topic);
-                  }
-                }}
+                  // Esta é a área!
+                  updatedArea = {
+                    ...area,
+                    topics: updatedTopics,
+                    totalCards: area.totalCards + newFlashcards.length,
+                  };
+                  return updatedArea;
+                });
+
+                return newStudyAreas;
+              });
+
+              // 4. LIMPA O FORMULÁRIO E ATIVA O POP-UP
+              setIaDescription(""); 
+              setShowSuccessToast(true); // <-- 🎉 SEU POP-UP VAI APARECER AQUI
+
+              // 5. NAVEGA PARA O TÓPICO ATUALIZADO
+              if (updatedTopic && updatedArea) {
+                  // Atualiza os estados locais também para a navegação
+                  setSelectedTopic(updatedTopic);
+                  setSelectedStudyArea(updatedArea);
+                  handleTopicClick(updatedTopic);
+              }
+            }}
               > 
                 <div className="space-y-2">
                   <label htmlFor="study-area" className="text-sm font-medium text-foreground">Área de Estudo *</label>
